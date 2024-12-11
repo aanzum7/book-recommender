@@ -1,7 +1,7 @@
-# Ignore all files inside 'config' but keep the folder
+# Ignore all files inside 'config' and its subdirectories, but keep the folder
 config/*
-!config/
+!config/**/
 
-# Ignore all files inside 'data' but keep the folder
+# Ignore all files inside 'data' and its subdirectories, but keep the folder
 data/*
-!data/
+!data/**/
