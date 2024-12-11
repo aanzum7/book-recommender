@@ -180,6 +180,10 @@ def main():
     st.title("NovelNexus")
     st.subheader("Where stories meet your interests.")
 
+    # Display author information in the sidebar
+    st.sidebar.title("About the Author")
+    st.sidebar.markdown("**Tanvir Anzum**")
+
     # Check if "view_details" is in the query params
     query_params = st.query_params
     if "view_details" in query_params:
