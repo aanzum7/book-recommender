@@ -50,7 +50,7 @@ This project is focused on building a **Recommendation System for Books** that p
 
 4. **Deployment**:
    - The system is deployed on Streamlit for a user-friendly interface.
-   - Demo Link: [NovelNexus](https://aanzum7-book-recommender-novelnexus-uphs6x.streamlit.app/)
+   - Demo Link: [NovelNexus](https://recommend-novelnexus.streamlit.app/)
 
 ## Installation
 
