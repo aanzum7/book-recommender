@@ -68,16 +68,38 @@ def display_book_cards_in_columns(book_details, columns):
                 publisher = book.get('publisher', 'Unknown Publisher')
                 year = book.get('year_of_publication', 'N/A')
 
+                # Truncate the book title to a maximum of two lines
+                max_title_length = 20  # Adjust title length limit
+                if len(book_title) > max_title_length:
+                    book_title = book_title[:max_title_length] + "..."
+
+                # Truncate author, publisher, and year to a maximum of one line
+                max_line_length = 15  # Adjust to fit the one-line limit for author/publisher/year
+                if len(book_author) > max_line_length:
+                    book_author = book_author[:max_line_length] + "..."
+                if len(publisher) > max_line_length:
+                    publisher = publisher[:max_line_length] + "..."
+                if len(str(year)) > max_line_length:
+                    year = str(year)[:max_line_length] + "..."
+
                 # Create a styled card for each book
                 st.markdown(
                     f"""
                     <div style="border: 1px solid #ddd; border-radius: 8px; padding: 10px; margin: 10px; 
                                 background-color: #f9f9f9; text-align: center; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);">
                         <img src="{image_url}" alt="{book_title}" style="width: 100px; height: 150px; object-fit: cover; margin-bottom: 10px;">
-                        <h4 style="font-size: 16px; margin: 10px 0; color: #333; overflow-wrap: break-word;">{book_title}</h4>
-                        <p style="font-size: 14px; margin: 5px 0; color: #555;"><strong>Author:</strong> {book_author}</p>
-                        <p style="font-size: 14px; margin: 5px 0; color: #555;"><strong>Publisher:</strong> {publisher}</p>
-                        <p style="font-size: 14px; margin: 5px 0; color: #555;"><strong>Year:</strong> {year}</p>
+                        <h4 style="font-size: 16px; margin: 10px 0; color: #333; overflow-wrap: break-word; 
+                                    white-space: nowrap; text-overflow: ellipsis; display: -webkit-box; 
+                                    -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-wrap: break-word;">{book_title}</h4>
+                        <p style="font-size: 14px; margin: 5px 0; color: #555; overflow-wrap: break-word; 
+                                  white-space: nowrap; text-overflow: ellipsis; display: -webkit-box; 
+                                  -webkit-line-clamp: 1; -webkit-box-orient: vertical;">Author: {book_author}</p>
+                        <p style="font-size: 14px; margin: 5px 0; color: #555; overflow-wrap: break-word; 
+                                  white-space: nowrap; text-overflow: ellipsis; display: -webkit-box; 
+                                  -webkit-line-clamp: 1; -webkit-box-orient: vertical;">Publisher: {publisher}</p>
+                        <p style="font-size: 14px; margin: 5px 0; color: #555; overflow-wrap: break-word; 
+                                  white-space: nowrap; text-overflow: ellipsis; display: -webkit-box; 
+                                  -webkit-line-clamp: 1; -webkit-box-orient: vertical;">Year: {year}</p>
                         <a href="/?view_details={isbn}" style="display: inline-block; margin-top: 10px; padding: 5px 10px; 
                             background-color: #007BFF; color: white; text-decoration: none; border-radius: 5px;">
                             View Details
@@ -88,6 +110,7 @@ def display_book_cards_in_columns(book_details, columns):
                 )
     else:
         st.write("No books found for the selected recommendations.")
+
 
 # Display book details
 def display_book_details(isbn, book_data, book_similarities):
