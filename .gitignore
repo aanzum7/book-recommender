@@ -5,3 +5,6 @@ config/*
 # Ignore all files inside 'data' and its subdirectories, but keep the folder
 data/*
 !data/**/
+
+# Ignore other large files (optional, if you don't want to upload them)
+data/raw_files/Books.csv
