@@ -7,4 +7,7 @@ data/*
 !data/**/
 
 # Ignore other large files (optional, if you don't want to upload them)
-data/raw_files/Books.csv
+data/raw_files/Books.
+
+# Ignore Google Cloud Service Account Key
+config/service_account/json_key_google_drive.json
