@@ -182,7 +182,16 @@ def main():
 
     # Display author information in the sidebar
     st.sidebar.title("About the Author")
-    st.sidebar.markdown("**Tanvir Anzum**")
+    st.sidebar.markdown("""
+    **Tanvir Anzum**  
+    *Author, Data Scientist, and Machine Learning Enthusiast*  
+
+    With a passion for leveraging technology to solve real-world problems, I specialize in building recommendation systems, data analytics, and machine learning models. Currently, I work on innovative projects in the analytics &  recommendation space.
+
+    ---
+
+    Feel free to connect with me on [LinkedIn](https://www.linkedin.com/in/aanzum/).
+    """)
 
     # Check if "view_details" is in the query params
     query_params = st.query_params
