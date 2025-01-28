@@ -186,11 +186,18 @@ def main():
     **Tanvir Anzum**  
     *Author, Data Scientist, and Machine Learning Enthusiast*  
 
-    With a passion for leveraging technology to solve real-world problems, I specialize in building recommendation systems, data analytics, and machine learning models. Currently, I work on innovative projects in the analytics &  recommendation space.
+    With a passion for leveraging technology to solve real-world problems, I specialize in building recommendation systems, data analytics, and machine learning models. Currently, I work on innovative projects in the analytics & recommendation space.
 
     ---
 
     Feel free to connect with me on [LinkedIn](https://www.linkedin.com/in/aanzum/).
+    """)
+
+    # Display project information in the sidebar
+    st.sidebar.title("About the Project")
+    st.sidebar.markdown("""
+    **NovelNexus - Where stories meet your interests**  
+    NovelNexus is a personalized Book Recommendation Engine designed to connect readers with stories that align with their interests. By analyzing user demographics, geographic preferences, and collaborative clustering, it provides tailored suggestions, helping users discover books that resonate with their unique tastes. Whether you're looking for the most-reviewed books in your age group or trending titles from your city, NovelNexus offers recommendations that make every reading experience special.
     """)
 
     # Check if "view_details" is in the query params
