@@ -11,3 +11,5 @@ data/raw_files/Books.
 
 # Ignore Google Cloud Service Account Key
 config/service_account/json_key_google_drive.json
+
+.vscode/ 
