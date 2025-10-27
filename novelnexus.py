@@ -5,7 +5,7 @@ import ast
 # ---------------------------
 # Page Config (MUST be first Streamlit call)
 # ---------------------------
-st.set_page_config(page_title="NovelNexus", layout="wide")
+st.set_page_config(page_title="NovelNexus",  page_icon="✨",  layout="wide")
 
 # ---------------------------
 # Global Configuration
