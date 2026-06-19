@@ -11,7 +11,7 @@ st.set_page_config(page_title="NovelNexus | Premium Bookstore", page_icon="📚"
 if "selected_isbn" not in st.session_state:
     st.session_state.selected_isbn = None
 if "reading_list" not in st.session_state:
-    st.session_state.reading_list = []
+    st.session_state.reading_list = set()  # Using O(1) Lookups
 
 # ---------------------------
 # Global Design Theme & Styles
@@ -125,9 +125,9 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ---------------------------
-# Data Loading Framework
+# High Efficiency Cached Data Engine
 # ---------------------------
-@st.cache_data
+@st.cache_data(ttl=3600, max_entries=5)
 def load_data():
     try:
         user_combined_recommendations = pd.read_csv("data/recommender_result/user_combined_recommendations.csv")
@@ -157,44 +157,56 @@ def load_data():
 
 user_info, book_data, book_similarities = load_data()
 
+# Pre-compiled high speed dictionaries for O(1) matching performance
+@st.cache_resource
+def build_lookups(_book_data, _book_similarities):
+    book_dict = _book_data.set_index('isbn').to_dict(orient='index')
+    similarity_dict = _book_similarities.set_index('isbn')['similar_books'].to_dict()
+    return book_dict, similarity_dict
+
+BOOK_LOOKUP, SIMILARITY_LOOKUP = build_lookups(book_data, book_similarities)
+
 # ---------------------------
-# Core Helpers
+# Optimised Light Helpers
 # ---------------------------
 def convert_to_list(value):
-    if isinstance(value, str):
-        value = value.strip()
-        if not value: return []
+    if not isinstance(value, str): return value or []
+    value = value.strip()
+    if not value: return []
+    try:
+        return ast.literal_eval(value)
+    except:
         try:
-            return ast.literal_eval(value)
-        except (ValueError, SyntaxError):
-            try:
-                return ast.literal_eval(value.replace("'", '"'))
-            except:
-                return []
-    return value
+            return ast.literal_eval(value.replace("'", '"'))
+        except:
+            return []
 
-def get_similar_books(isbn, book_similarities):
-    similar_books = book_similarities[book_similarities['isbn'] == isbn]
-    if not similar_books.empty:
-        similar_isbns = similar_books.iloc[0]['similar_books']
-        if isinstance(similar_isbns, str):
-            return [x.strip() for x in similar_isbns.split(",")][:10]
+def get_similar_books_fast(isbn):
+    similar_isbns = SIMILARITY_LOOKUP.get(isbn, "")
+    if isinstance(similar_isbns, str) and similar_isbns:
+        return [x.strip() for x in similar_isbns.split(",")][:10]
     return []
 
-def get_book_details(isbns, book_data):
-    if not isbns: return pd.DataFrame()
-    valid_isbns = [str(i) for i in isbns]
-    book_details = book_data[book_data['isbn'].astype(str).isin(valid_isbns)].copy()
-    book_details['isbn'] = book_details['isbn'].astype(str)
-    book_details = book_details.drop_duplicates(subset=['isbn']).set_index('isbn').reindex(valid_isbns).reset_index()
-    return book_details.dropna(subset=['book_title'])
+def get_book_details_fast(isbns):
+    records = []
+    for i in isbns:
+        str_i = str(i)
+        if str_i in BOOK_LOOKUP:
+            item = BOOK_LOOKUP[str_i].copy()
+            item['isbn'] = str_i
+            records.append(item)
+    return pd.DataFrame(records)
 
 # ---------------------------
-# UI Grid Component
+# UI Fragment - Isolated Rerenders 
 # ---------------------------
+@st.fragment
 def display_book_cards_grid(book_details, prefix="default", search_term="", year_range=None):
+    if book_details.empty:
+        st.markdown("<div style='padding:20px; background:#1A1D24; border-radius:10px; border:1px dashed #2D3139; text-align:center; color:#9CA3AF;'>Shelf empty.</div>", unsafe_allow_html=True)
+        return
+        
     filtered_df = book_details.copy()
-    
     if search_term:
         filtered_df = filtered_df[
             filtered_df['book_title'].str.contains(search_term, case=False, na=False) |
@@ -208,7 +220,7 @@ def display_book_cards_grid(book_details, prefix="default", search_term="", year
         ]
 
     if filtered_df.empty:
-        st.markdown("<div style='padding:20px; background:#1A1D24; border-radius:10px; border:1px dashed #2D3139; text-align:center; color:#9CA3AF;'>No matching volumes found on this shelf.</div>", unsafe_allow_html=True)
+        st.markdown("<div style='padding:20px; background:#1A1D24; border-radius:10px; border:1px dashed #2D3139; text-align:center; color:#9CA3AF;'>No matching items.</div>", unsafe_allow_html=True)
         return
 
     cols = st.columns(5)
@@ -227,9 +239,10 @@ def display_book_cards_grid(book_details, prefix="default", search_term="", year
             is_saved = isbn in st.session_state.reading_list
             fav_icon = "❤️" if is_saved else "🤍"
 
+            # Added browser-level image loading="lazy" for frontend optimizations
             st.markdown(f"""
             <div class="book-card">
-                <img src="{image_url}" style="width: 105px; height: 145px; object-fit: cover; border-radius: 6px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.4));">
+                <img src="{image_url}" loading="lazy" style="width: 105px; height: 145px; object-fit: cover; border-radius: 6px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.4));">
                 <div style="width:100%;">
                     <div class="book-title" title="{book_title}">{book_title}</div>
                     <div class="book-meta" title="{book_author}">✍️ <b>{book_author}</b></div>
@@ -249,26 +262,23 @@ def display_book_cards_grid(book_details, prefix="default", search_term="", year
             with btn_col2:
                 if st.button(fav_icon, key=f"save_{prefix}_{isbn}_{index}", use_container_width=True):
                     if not is_saved:
-                        st.session_state.reading_list.append(isbn)
-                        st.toast(f"Saved '{book_title}' to favorites!", icon="❤️")
-                        st.rerun()
+                        st.session_state.reading_list.add(isbn)
+                        st.toast(f"Added to favorites!", icon="❤️")
                     else:
                         st.session_state.reading_list.remove(isbn)
                         st.toast("Removed from favorites.", icon="🗑️")
-                        st.rerun()
+                    st.rerun()
 
 # ---------------------------
-# Individual Views
+# Individual Detailed View Screen
 # ---------------------------
-def display_book_details_view(isbn, book_data, book_similarities):
+def display_book_details_view(isbn):
     if st.button("← Back to Marketplace Home", use_container_width=True):
         st.session_state.selected_isbn = None
         st.rerun()
         
-    book_selection = book_data[book_data['isbn'] == isbn]
-    if not book_selection.empty:
-        book = book_selection.iloc[0]
-        
+    if isbn in BOOK_LOOKUP:
+        book = BOOK_LOOKUP[isbn]
         st.markdown("<br>", unsafe_allow_html=True)
         col1, col2 = st.columns([1, 2])
         with col1:
@@ -294,28 +304,52 @@ def display_book_details_view(isbn, book_data, book_similarities):
 
         st.markdown("---")
         st.subheader("✨ Readers Who Bought This Also Enjoyed")
-        similar_isbns = get_similar_books(isbn, book_similarities)
+        similar_isbns = get_similar_books_fast(isbn)
         if similar_isbns:
-            display_book_cards_grid(get_book_details(similar_isbns, book_data), prefix="similar")
+            display_book_cards_grid(get_book_details_fast(similar_isbns), prefix="similar")
         else:
-            st.caption("No recommendations available for this specific title yet.")
+            st.caption("No matches found.")
 
 # ---------------------------
-# Sidebar Frame
+# Sidebar Frame With Fixed Bottom Dynamic Profiles
 # ---------------------------
 with st.sidebar:
     st.markdown("<h2 style='color:#FFF; margin-bottom:0;'>📚 NovelNexus</h2>", unsafe_allow_html=True)
     st.caption("Your Premium AI Bookstore")
     st.markdown("---")
-    st.subheader("👤 Account Profile")
-    st.markdown("**Tanvir Anzum**\n*Chief Curator*")
-    st.caption(f"Favorites Saved: {len(st.session_state.reading_list)}")
+    st.metric(label="Active Session Saved Items", value=len(st.session_state.reading_list))
+    
+    # Bottom Enclosed Developer Profile Markdown block
+    st.markdown("---")
+    st.title("👨‍💻 About the Author")
+    st.caption("Tanvir Anzum – AI & Data Researcher")
+    st.markdown("""
+        <div style='font-size: 14px; font-weight: normal;'>
+        Passionate about turning <strong>data into insights</strong> and building <strong>AI-powered tools</strong> for real-world impact.
+        </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+        <div style='font-size: 14px; font-weight: normal;'>
+        <br>
+        <a href="https://www.linkedin.com/in/aanzum" target="_blank">
+            <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" alt="LinkedIn" width="16" style="vertical-align:middle; margin-right:6px;">
+            <strong>LinkedIn</strong>
+        </a>
+        &nbsp;&nbsp;
+        <a href="https://www.researchgate.net/profile/Tanvir-Anzum" target="_blank">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/ResearchGate_icon_SVG.svg" alt="ResearchGate" width="16" style="vertical-align:middle; margin-right:6px;">
+            <strong>Research</strong>
+        </a>
+        </div>
+    """, unsafe_allow_html=True)
+    st.markdown("---")
 
 # ---------------------------
-# Main Routing Application Engine
+# Main Routing Logic
 # ---------------------------
 if st.session_state.selected_isbn:
-    display_book_details_view(st.session_state.selected_isbn, book_data, book_similarities)
+    display_book_details_view(st.session_state.selected_isbn)
 else:
     st.title("📚 Discovery Marketplace")
     
@@ -339,13 +373,11 @@ else:
     # 1. CATEGORY VIEW FIRST
     with tab_all:
         st.markdown("### Browse Categories")
-        
         st.markdown("#### ⏳ Vintage Classics (Published Before 2000)")
         vintage_books = book_data[book_data['year_of_publication'] < 2000]
         display_book_cards_grid(vintage_books[:10], prefix="all_vintage", search_term=global_search)
         
         st.markdown("---")
-        
         st.markdown("#### ✨ Modern Era Hits (Published 2000 & Later)")
         modern_books = book_data[book_data['year_of_publication'] >= 2000]
         display_book_cards_grid(modern_books[:10], prefix="all_modern", search_term=global_search)
@@ -353,30 +385,27 @@ else:
     # 2. PERSONALIZED RECOMMENDATIONS
     with tab1:
         st.markdown("### Handpicked For You")
-        st.caption("Tailored explicitly to your historical alignment index.")
         collab_ids = convert_to_list(user_row['collaborative_cluster_recommendation'])[:10]
-        display_book_cards_grid(get_book_details(collab_ids, book_data), prefix="curated", search_term=global_search)
+        display_book_cards_grid(get_book_details_fast(collab_ids), prefix="curated", search_term=global_search)
         
     with tab2:
         st.markdown("### Peer Demographic Trends")
-        st.caption("Top sales matches intersecting within your age demographics.")
         demo_ids = convert_to_list(user_row['demographic_recommendation'])[:10]
-        display_book_cards_grid(get_book_details(demo_ids, book_data), prefix="demographic", search_term=global_search)
+        display_book_cards_grid(get_book_details_fast(demo_ids), prefix="demographic", search_term=global_search)
         
     with tab3:
         st.markdown("### Regional Best Sellers")
-        st.caption("Dense geo-transaction patterns near your zone.")
         geo_ids = convert_to_list(user_row['geographic_recommendation'])[:10]
-        display_book_cards_grid(get_book_details(geo_ids, book_data), prefix="geographic", search_term=global_search)
+        display_book_cards_grid(get_book_details_fast(geo_ids), prefix="geographic", search_term=global_search)
 
     # 3. SAVED USER REPOSITORY
     with tab_saved:
         st.markdown("### Your Favorites Vault")
         if st.session_state.reading_list:
             if st.button("🗑️ Clear Entire List", use_container_width=True):
-                st.session_state.reading_list = []
+                st.session_state.reading_list.clear()
                 st.rerun()
-            saved_books = get_book_details(st.session_state.reading_list, book_data)
+            saved_books = get_book_details_fast(list(st.session_state.reading_list))
             display_book_cards_grid(saved_books, prefix="vault")
         else:
-            st.info("Your favorites vault is empty. Click the heart icon on books inside other tabs to populate this section.")
+            st.info("Your favorites vault is empty.")
