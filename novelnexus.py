@@ -7,11 +7,16 @@ import ast
 # ---------------------------
 st.set_page_config(page_title="NovelNexus | Premium Bookstore", page_icon="📚", layout="wide")
 
-# Initialize Session States
+# Safe State Initialization (Ensures no structural type mismatches)
 if "selected_isbn" not in st.session_state:
     st.session_state.selected_isbn = None
-if "reading_list" not in st.session_state:
-    st.session_state.reading_list = set()  # Using O(1) Lookups
+
+if "reading_list" not in st.session_state or not isinstance(st.session_state.reading_list, set):
+    # Auto-migrate older list sessions seamlessly to set structure
+    if "reading_list" in st.session_state and isinstance(st.session_state.reading_list, list):
+        st.session_state.reading_list = set(st.session_state.reading_list)
+    else:
+        st.session_state.reading_list = set()
 
 # ---------------------------
 # Global Design Theme & Styles
@@ -121,8 +126,36 @@ st.markdown(f"""
         color: #FFFFFF;
         margin-top: 4px;
     }}
+
+    /* AI Crash Terminal Style */
+    .terminal-card {{
+        background: #1E1E24;
+        border-left: 4px solid #EF4444;
+        padding: 15px;
+        border-radius: 6px;
+        font-family: monospace;
+        color: #F87171;
+        margin: 15px 0;
+    }}
 </style>
 """, unsafe_allow_html=True)
+
+# ---------------------------
+# Humorous Exception Handler UI Component
+# ---------------------------
+def show_witty_error(err_message, feature_context="System Core"):
+    st.markdown(f"""
+    <div class="terminal-card">
+        🚨 <b>[AI Engine Outage Status: Roadtrip Pitstop]</b><br>
+        <span style="color:#A1A1AA;">Context: Processing {feature_context}</span><br><br>
+        <i>"Whoops! The recommendation models just pulled over at a highway diner for a shot of pure espresso. 
+        While our matrix vectors stretch their legs, here is the diagnostic telemetry:"</i>
+        <br><br>
+        <code style="background:#111827; padding:4px 8px; border-radius:4px; color:#FCA5A5;">
+            {str(err_message)}
+        </code>
+    </div>
+    """, unsafe_allow_html=True)
 
 # ---------------------------
 # High Efficiency Cached Data Engine
@@ -202,113 +235,123 @@ def get_book_details_fast(isbns):
 # ---------------------------
 @st.fragment
 def display_book_cards_grid(book_details, prefix="default", search_term="", year_range=None):
-    if book_details.empty:
-        st.markdown("<div style='padding:20px; background:#1A1D24; border-radius:10px; border:1px dashed #2D3139; text-align:center; color:#9CA3AF;'>Shelf empty.</div>", unsafe_allow_html=True)
-        return
-        
-    filtered_df = book_details.copy()
-    if search_term:
-        filtered_df = filtered_df[
-            filtered_df['book_title'].str.contains(search_term, case=False, na=False) |
-            filtered_df['book_author'].str.contains(search_term, case=False, na=False)
-        ]
-        
-    if year_range:
-        filtered_df = filtered_df[
-            (filtered_df['year_of_publication'] >= year_range[0]) &
-            (filtered_df['year_of_publication'] <= year_range[1])
-        ]
-
-    if filtered_df.empty:
-        st.markdown("<div style='padding:20px; background:#1A1D24; border-radius:10px; border:1px dashed #2D3139; text-align:center; color:#9CA3AF;'>No matching items.</div>", unsafe_allow_html=True)
-        return
-
-    cols = st.columns(5)
-    for index, (_, book) in enumerate(filtered_df.iterrows()):
-        col = cols[index % 5]
-        with col:
-            isbn = book.get('isbn', 'N/A')
-            image_url = book.get('image_url', 'https://via.placeholder.com/150')
-            book_title = book.get('book_title', 'Untitled')
-            book_author = book.get('book_author', 'Unknown Author')
-            publisher = book.get('publisher', 'Unknown Publisher')
-            year = book.get('year_of_publication', 0)
+    try:
+        if book_details.empty:
+            st.markdown("<div style='padding:20px; background:#1A1D24; border-radius:10px; border:1px dashed #2D3139; text-align:center; color:#9CA3AF;'>Shelf empty.</div>", unsafe_allow_html=True)
+            return
             
-            badge_html = '<span class="badge-pill badge-vintage">⏳ Vintage</span>' if year < 2000 else '<span class="badge-pill badge-modern">✨ Modern</span>'
+        filtered_df = book_details.copy()
+        if search_term:
+            filtered_df = filtered_df[
+                filtered_df['book_title'].str.contains(search_term, case=False, na=False) |
+                filtered_df['book_author'].str.contains(search_term, case=False, na=False)
+            ]
             
-            is_saved = isbn in st.session_state.reading_list
-            fav_icon = "❤️" if is_saved else "🤍"
+        if year_range:
+            filtered_df = filtered_df[
+                (filtered_df['year_of_publication'] >= year_range[0]) &
+                (filtered_df['year_of_publication'] <= year_range[1])
+            ]
 
-            # Added browser-level image loading="lazy" for frontend optimizations
-            st.markdown(f"""
-            <div class="book-card">
-                <img src="{image_url}" loading="lazy" style="width: 105px; height: 145px; object-fit: cover; border-radius: 6px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.4));">
-                <div style="width:100%;">
-                    <div class="book-title" title="{book_title}">{book_title}</div>
-                    <div class="book-meta" title="{book_author}">✍️ <b>{book_author}</b></div>
-                    <div class="star-rating">⭐ 4.6 <span style="color:#6B7280; font-size:10px; font-weight:normal;">(410)</span></div>
-                    <div class="book-meta" title="{publisher}">🏢 <small>{publisher}</small></div>
-                    <div class="book-meta">📅 <small>Year: {year if year > 0 else 'N/A'}</small></div>
-                    <div style="text-align: left; width: 100%; margin-top: 6px;">{badge_html}</div>
+        if filtered_df.empty:
+            st.markdown("<div style='padding:20px; background:#1A1D24; border-radius:10px; border:1px dashed #2D3139; text-align:center; color:#9CA3AF;'>No matching items found on this row.</div>", unsafe_allow_html=True)
+            return
+
+        cols = st.columns(5)
+        for index, (_, book) in enumerate(filtered_df.iterrows()):
+            col = cols[index % 5]
+            with col:
+                isbn = book.get('isbn', 'N/A')
+                image_url = book.get('image_url', 'https://via.placeholder.com/150')
+                book_title = book.get('book_title', 'Untitled')
+                book_author = book.get('book_author', 'Unknown Author')
+                publisher = book.get('publisher', 'Unknown Publisher')
+                year = book.get('year_of_publication', 0)
+                
+                badge_html = '<span class="badge-pill badge-vintage">⏳ Vintage</span>' if year < 2000 else '<span class="badge-pill badge-modern">✨ Modern</span>'
+                
+                # Bulletproof structural set checks
+                is_saved = isinstance(st.session_state.reading_list, set) and isbn in st.session_state.reading_list
+                fav_icon = "❤️" if is_saved else "🤍"
+
+                st.markdown(f"""
+                <div class="book-card">
+                    <img src="{image_url}" loading="lazy" style="width: 105px; height: 145px; object-fit: cover; border-radius: 6px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.4));">
+                    <div style="width:100%;">
+                        <div class="book-title" title="{book_title}">{book_title}</div>
+                        <div class="book-meta" title="{book_author}">✍️ <b>{book_author}</b></div>
+                        <div class="star-rating">⭐ 4.6 <span style="color:#6B7280; font-size:10px; font-weight:normal;">(410)</span></div>
+                        <div class="book-meta" title="{publisher}">🏢 <small>{publisher}</small></div>
+                        <div class="book-meta">📅 <small>Year: {year if year > 0 else 'N/A'}</small></div>
+                        <div style="text-align: left; width: 100%; margin-top: 6px;">{badge_html}</div>
+                    </div>
                 </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            btn_col1, btn_col2 = st.columns([5, 3])
-            with btn_col1:
-                if st.button("📖 Open", key=f"det_{prefix}_{isbn}_{index}", use_container_width=True):
-                    st.session_state.selected_isbn = isbn
-                    st.rerun()
-            with btn_col2:
-                if st.button(fav_icon, key=f"save_{prefix}_{isbn}_{index}", use_container_width=True):
-                    if not is_saved:
-                        st.session_state.reading_list.add(isbn)
-                        st.toast(f"Added to favorites!", icon="❤️")
-                    else:
-                        st.session_state.reading_list.remove(isbn)
-                        st.toast("Removed from favorites.", icon="🗑️")
-                    st.rerun()
+                """, unsafe_allow_html=True)
+                
+                btn_col1, btn_col2 = st.columns([5, 3])
+                with btn_col1:
+                    if st.button("📖 Open", key=f"det_{prefix}_{isbn}_{index}", use_container_width=True):
+                        st.session_state.selected_isbn = isbn
+                        st.rerun()
+                with btn_col2:
+                    if st.button(fav_icon, key=f"save_{prefix}_{isbn}_{index}", use_container_width=True):
+                        # Force structural conversion if it ever corrupts dynamically
+                        if not isinstance(st.session_state.reading_list, set):
+                            st.session_state.reading_list = set(st.session_state.reading_list)
+                            
+                        if not is_saved:
+                            st.session_state.reading_list.add(isbn)
+                            st.toast(f"Added to favorites!", icon="❤️")
+                        else:
+                            st.session_state.reading_list.remove(isbn)
+                            st.toast("Removed from favorites.", icon="🗑️")
+                        st.rerun()
+    except Exception as e:
+        show_witty_error(e, feature_context=f"Grid Showcase Layout ({prefix})")
 
 # ---------------------------
 # Individual Detailed View Screen
 # ---------------------------
 def display_book_details_view(isbn):
-    if st.button("← Back to Marketplace Home", use_container_width=True):
-        st.session_state.selected_isbn = None
-        st.rerun()
-        
-    if isbn in BOOK_LOOKUP:
-        book = BOOK_LOOKUP[isbn]
-        st.markdown("<br>", unsafe_allow_html=True)
-        col1, col2 = st.columns([1, 2])
-        with col1:
-            st.image(book['image_url'], use_container_width=True)
-        with col2:
-            st.title(book['book_title'])
-            st.markdown(f"### By **{book['book_author']}**")
+    try:
+        if st.button("← Back to Marketplace Home", use_container_width=True):
+            st.session_state.selected_isbn = None
+            st.rerun()
             
-            st.markdown(f"""
-            <div class="info-container">
-                <div class="info-label">Publisher</div>
-                <div class="info-value">{book['publisher']}</div>
-            </div>
-            <div class="info-container">
-                <div class="info-label">Publication Year</div>
-                <div class="info-value">{book['year_of_publication']}</div>
-            </div>
-            <div class="info-container" style="border-left: 4px solid {CONFIG['success_color']};">
-                <div class="info-label" style="color: {CONFIG['success_color']};">Availability</div>
-                <div class="info-value" style="color: #FFF;">In Stock <span style="font-size:13px; color:#9CA3AF;">(Dispatches within 24 hours)</span></div>
-            </div>
-            """, unsafe_allow_html=True)
+        if isbn in BOOK_LOOKUP:
+            book = BOOK_LOOKUP[isbn]
+            st.markdown("<br>", unsafe_allow_html=True)
+            col1, col2 = st.columns([1, 2])
+            with col1:
+                st.image(book['image_url'], use_container_width=True)
+            with col2:
+                st.title(book['book_title'])
+                st.markdown(f"### By **{book['book_author']}**")
+                
+                st.markdown(f"""
+                <div class="info-container">
+                    <div class="info-label">Publisher</div>
+                    <div class="info-value">{book['publisher']}</div>
+                </div>
+                <div class="info-container">
+                    <div class="info-label">Publication Year</div>
+                    <div class="info-value">{book['year_of_publication']}</div>
+                </div>
+                <div class="info-container" style="border-left: 4px solid {CONFIG['success_color']};">
+                    <div class="info-label" style="color: {CONFIG['success_color']};">Availability</div>
+                    <div class="info-value" style="color: #FFF;">In Stock <span style="font-size:13px; color:#9CA3AF;">(Dispatches within 24 hours)</span></div>
+                </div>
+                """, unsafe_allow_html=True)
 
-        st.markdown("---")
-        st.subheader("✨ Readers Who Bought This Also Enjoyed")
-        similar_isbns = get_similar_books_fast(isbn)
-        if similar_isbns:
-            display_book_cards_grid(get_book_details_fast(similar_isbns), prefix="similar")
-        else:
-            st.caption("No matches found.")
+            st.markdown("---")
+            st.subheader("✨ Readers Who Bought This Also Enjoyed")
+            similar_isbns = get_similar_books_fast(isbn)
+            if similar_isbns:
+                display_book_cards_grid(get_book_details_fast(similar_isbns), prefix="similar")
+            else:
+                st.caption("No matches found.")
+    except Exception as e:
+        show_witty_error(e, feature_context="Item Detailed Description Stage")
 
 # ---------------------------
 # Sidebar Frame With Fixed Bottom Dynamic Profiles
@@ -317,9 +360,11 @@ with st.sidebar:
     st.markdown("<h2 style='color:#FFF; margin-bottom:0;'>📚 NovelNexus</h2>", unsafe_allow_html=True)
     st.caption("Your Premium AI Bookstore")
     st.markdown("---")
-    st.metric(label="Active Session Saved Items", value=len(st.session_state.reading_list))
     
-    # Bottom Enclosed Developer Profile Markdown block
+    # Render count safely regardless of object state types
+    saved_count = len(st.session_state.reading_list) if isinstance(st.session_state.reading_list, (set, list)) else 0
+    st.metric(label="Active Session Saved Items", value=saved_count)
+    
     st.markdown("---")
     st.title("👨‍💻 About the Author")
     st.caption("Tanvir Anzum – AI & Data Researcher")
@@ -357,9 +402,15 @@ else:
     with h_col1:
         global_search = st.text_input("🔍 Search entire catalog...", placeholder="Type title, author or keywords to dynamically filter shelves below...")
     with h_col2:
-        user_id = st.selectbox("🎯 Active Personalization Profile:", user_info['user_id'].unique())
+        user_ids = user_info['user_id'].unique() if 'user_id' in user_info.columns else [1001]
+        user_id = st.selectbox("🎯 Active Personalization Profile:", user_ids)
         
-    user_row = user_info[user_info['user_id'] == user_id].iloc[0]
+    # Guard against completely corrupted/empty data indices
+    if 'user_id' in user_info.columns and not user_info[user_info['user_id'] == user_id].empty:
+        user_row = user_info[user_info['user_id'] == user_id].iloc[0]
+    else:
+        user_row = pd.Series({'collaborative_cluster_recommendation': "[]", 'demographic_recommendation': "[]", 'geographic_recommendation': "[]"})
+        
     st.markdown("---")
     
     tab_all, tab1, tab2, tab3, tab_saved = st.tabs([
@@ -367,35 +418,35 @@ else:
         "🤝 Handpicked For You", 
         "👥 Popular Among Peers", 
         "📍 Trending In Your Area",
-        f"❤️ My Favorites ({len(st.session_state.reading_list)})"
+        f"❤️ My Favorites ({saved_count})"
     ])
     
     # 1. CATEGORY VIEW FIRST
     with tab_all:
         st.markdown("### Browse Categories")
         st.markdown("#### ⏳ Vintage Classics (Published Before 2000)")
-        vintage_books = book_data[book_data['year_of_publication'] < 2000]
+        vintage_books = book_data[book_data['year_of_publication'] < 2000] if 'year_of_publication' in book_data.columns else book_data
         display_book_cards_grid(vintage_books[:10], prefix="all_vintage", search_term=global_search)
         
         st.markdown("---")
         st.markdown("#### ✨ Modern Era Hits (Published 2000 & Later)")
-        modern_books = book_data[book_data['year_of_publication'] >= 2000]
+        modern_books = book_data[book_data['year_of_publication'] >= 2000] if 'year_of_publication' in book_data.columns else book_data
         display_book_cards_grid(modern_books[:10], prefix="all_modern", search_term=global_search)
         
     # 2. PERSONALIZED RECOMMENDATIONS
     with tab1:
         st.markdown("### Handpicked For You")
-        collab_ids = convert_to_list(user_row['collaborative_cluster_recommendation'])[:10]
+        collab_ids = convert_to_list(user_row.get('collaborative_cluster_recommendation', "[]"))[:10]
         display_book_cards_grid(get_book_details_fast(collab_ids), prefix="curated", search_term=global_search)
         
     with tab2:
         st.markdown("### Peer Demographic Trends")
-        demo_ids = convert_to_list(user_row['demographic_recommendation'])[:10]
+        demo_ids = convert_to_list(user_row.get('demographic_recommendation', "[]"))[:10]
         display_book_cards_grid(get_book_details_fast(demo_ids), prefix="demographic", search_term=global_search)
         
     with tab3:
         st.markdown("### Regional Best Sellers")
-        geo_ids = convert_to_list(user_row['geographic_recommendation'])[:10]
+        geo_ids = convert_to_list(user_row.get('geographic_recommendation', "[]"))[:10]
         display_book_cards_grid(get_book_details_fast(geo_ids), prefix="geographic", search_term=global_search)
 
     # 3. SAVED USER REPOSITORY
