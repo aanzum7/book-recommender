@@ -3,21 +3,21 @@ import pandas as pd  # type: ignore
 import ast
 
 # ---------------------------
-# Page Config (Must be the very first Streamlit call)
+# Page Config
 # ---------------------------
-st.set_page_config(page_title="NovelNexus", page_icon="📚", layout="wide")
+st.set_page_config(page_title="NovelNexus | Discover Your Next Great Read", page_icon="📚", layout="wide")
 
 # ---------------------------
-# Global Configuration & Styles
+# Global Design Theme & Styles
 # ---------------------------
 CONFIG = {
-    "background_color": "#0E1117",
-    "card_bg": "#161B22",
-    "card_border": "#30363D",
-    "text_color": "#C9D1D9",
-    "accent_color": "#58A6FF",
-    "success_color": "#2EA043",
-    "font_family": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif"
+    "background_color": "#0F1115",
+    "card_bg": "#1A1D24",
+    "card_border": "#2D3139",
+    "text_color": "#E1E4EA",
+    "accent_color": "#4F46E5",  # Premium Indigo Accent
+    "success_color": "#10B981",
+    "font_family": "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
 }
 
 st.markdown(f"""
@@ -28,15 +28,15 @@ st.markdown(f"""
         color: {CONFIG['text_color']};
     }}
     
-    /* Modernized Book Card Design */
+    /* Premium Book Store Card Design */
     .book-card {{
         background: {CONFIG['card_bg']};
         border: 1px solid {CONFIG['card_border']};
-        border-radius: 12px;
-        padding: 20px;
+        border-radius: 14px;
+        padding: 22px;
         text-align: center;
-        transition: all 0.25s ease-in-out;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
         height: 100%;
         display: flex;
         flex-direction: column;
@@ -44,25 +44,25 @@ st.markdown(f"""
         align-items: center;
     }}
     .book-card:hover {{
-        transform: translateY(-4px);
-        box-shadow: 0 12px 24px rgba(88, 166, 255, 0.18);
+        transform: translateY(-6px);
+        box-shadow: 0 20px 30px -10px rgba(79, 70, 229, 0.3);
         border-color: {CONFIG['accent_color']};
     }}
     .book-title {{
-        font-size: 15px;
-        font-weight: 600;
-        color: #F0F6FC;
-        margin: 14px 0 8px 0;
+        font-size: 16px;
+        font-weight: 700;
+        color: #FFFFFF;
+        margin: 16px 0 6px 0;
         line-height: 1.4;
-        min-height: 42px;
+        min-height: 44px;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }}
     .book-meta {{
-        font-size: 12.5px;
-        color: #8B949E;
+        font-size: 13px;
+        color: #9CA3AF;
         margin: 4px 0;
         text-align: left;
         display: flex;
@@ -70,65 +70,56 @@ st.markdown(f"""
         gap: 6px;
     }}
     
-    /* Interactive Pill Badges */
+    /* Clean Modern Badges */
     .badge-pill {{
         display: inline-block;
-        padding: 2px 8px;
-        border-radius: 20px;
-        font-size: 10px;
+        padding: 4px 10px;
+        border-radius: 30px;
+        font-size: 11px;
         font-weight: 600;
-        text-transform: uppercase;
-        margin-top: 6px;
-        letter-spacing: 0.05em;
+        margin-top: 10px;
+        letter-spacing: 0.02em;
     }}
-    .badge-vintage {{ background: #482715; color: #FF944D; border: 1px solid #FF944D33; }}
-    .badge-modern {{ background: #153248; color: #58A6FF; border: 1px solid #58A6FF33; }}
+    .badge-vintage {{ background: rgba(245, 158, 11, 0.15); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.25); }}
+    .badge-modern {{ background: rgba(59, 130, 246, 0.15); color: #3B82F6; border: 1px solid rgba(59, 130, 246, 0.25); }}
     
-    /* Custom Web-Style Dashboard Metric Cards */
-    .metric-container {{
-        background: #161B22;
-        border: 1px solid #30363D;
-        border-radius: 8px;
-        padding: 15px;
+    /* E-Commerce Product Metadata Cards */
+    .info-container {{
+        background: #1A1D24;
+        border: 1px solid #2D3139;
+        border-radius: 10px;
+        padding: 16px;
         text-align: left;
-        margin-bottom: 15px;
+        margin-bottom: 14px;
     }}
-    .metric-label {{
-        font-size: 12px;
-        color: #8B949E;
+    .info-label {{
+        font-size: 11px;
+        color: #9CA3AF;
         text-transform: uppercase;
         letter-spacing: 0.05em;
+        font-weight: 600;
     }}
-    .metric-value {{
-        font-size: 20px;
-        font-weight: bold;
-        color: #58A6FF;
-        margin-top: 5px;
+    .info-value {{
+        font-size: 18px;
+        font-weight: 600;
+        color: #FFFFFF;
+        margin-top: 4px;
     }}
 
-    /* Architecture Tree Styles */
-    .pipeline-node {{
-        background: #161B22;
-        border-left: 4px solid {CONFIG['accent_color']};
-        border: 1px solid {CONFIG['card_border']};
-        border-left: 4px solid {CONFIG['accent_color']};
+    /* Sidebar Navigation Links Style */
+    .nav-node {{
+        background: #1A1D24;
+        border: 1px solid #2D3139;
         padding: 12px;
         margin: 10px 0;
-        border-radius: 6px;
-        font-size: 12.5px;
-    }}
-    .pipeline-arrow {{
-        text-align: center;
-        color: {CONFIG['accent_color']};
-        font-size: 14px;
-        margin: -6px 0;
-        font-weight: bold;
+        border-radius: 8px;
+        font-size: 13px;
     }}
 </style>
 """, unsafe_allow_html=True)
 
 # ---------------------------
-# Load Data (Cached Framework)
+# Data Loading Framework
 # ---------------------------
 @st.cache_data
 def load_data():
@@ -137,11 +128,10 @@ def load_data():
         book_data = pd.read_parquet("data/preprocessed_files/distinct_books.parquet")
         book_similarities = pd.read_csv("data/recommender_result/book_similarities.csv")
     except Exception:
-        # Development fallback matrix containing 10 items for deep rendering verification
         user_combined_recommendations = pd.DataFrame({
             'user_id': [1001, 1002, 1003],
             'geographic_recommendation': ["['0345339681', '0449212602', '0345339681', '0449212602', '0345339681', '0449212602', '0345339681', '0449212602', '0345339681', '0449212602']", "[]", "[]"],
-            'demographic_recommendation': ["['0345339681', '0449212602', '0345339681', '0449212602', '0345339681', '0449212602', '0345339681', '0449212602', '0345339681', '0449212602']", "['0449212602']", "[]"],
+            'demographic_recommendation': ["['0345339681', '0449212602', '0345339681', '0449212602', '0345339681', '0449212602', '0345339681', '0449212602', '0345339681', '0449212602']", ["0449212602"], "[]"],
             'collaborative_cluster_recommendation': ["['0345339681', '0449212602', '0345339681', '0449212602', '0345339681', '0449212602', '0345339681', '0449212602', '0345339681', '0449212602']", "[]", "[]"]
         })
         book_data = pd.DataFrame({
@@ -157,7 +147,7 @@ def load_data():
     return user_combined_recommendations, book_data, book_similarities
 
 # ---------------------------
-# Helper Mechanics
+# Core Helpers
 # ---------------------------
 def convert_to_list(value):
     if isinstance(value, str):
@@ -189,18 +179,8 @@ def get_book_details(isbns, book_data):
     return book_details.dropna(subset=['book_title'])
 
 # ---------------------------
-# UI Presentation Components
+# UI Components
 # ---------------------------
-def render_architecture_tree():
-    st.markdown("### 🛠️ Core Infrastructure Engine")
-    st.markdown("""
-    <div class="pipeline-node">📂 <b>Unified Storage Layer</b><br><small>Apache Parquet Vectors & DataFrames</small></div>
-    <div class="pipeline-arrow">🗘</div>
-    <div class="pipeline-node">🤖 <b>Multi-Strategy Matcher Engine</b><br><small>Collaborative / Demographic / Geo Closures</small></div>
-    <div class="pipeline-arrow">🗘</div>
-    <div class="pipeline-node" style="border-left-color: #2ea043;">🎨 <b>Reactive Interaction Panel</b><br><small>Asynchronous State-Router Hooks</small></div>
-    """, unsafe_allow_html=True)
-
 def display_book_cards_grid(book_details, search_term="", year_range=None):
     filtered_df = book_details.copy()
     
@@ -220,44 +200,44 @@ def display_book_cards_grid(book_details, search_term="", year_range=None):
         ]
 
     if filtered_df.empty:
-        st.markdown("""<div style='padding:20px; background:#161B22; border-radius:8px; border:1px dashed #30363D; text-align:center; color:#8B949E;'>
-                    No target selections match your current sub-filter configurations.
+        st.markdown("""<div style='padding:30px; background:#1A1D24; border-radius:10px; border:1px dashed #2D3139; text-align:center; color:#9CA3AF;'>
+                    No books found matching your current filter choices.
                     </div>""", unsafe_allow_html=True)
         return
 
-    # Fluid 3-Column Grid Layout Configuration
+    # Fluid 3-Column E-Commerce Grid Layout
     cols = st.columns(3)
     for index, (_, book) in enumerate(filtered_df.iterrows()):
         col = cols[index % 3]
         with col:
             isbn = book.get('isbn', 'N/A')
             image_url = book.get('image_url', 'https://via.placeholder.com/150')
-            book_title = book.get('book_title', 'Unknown Title')
+            book_title = book.get('book_title', 'Untitled')
             book_author = book.get('book_author', 'Unknown Author')
             publisher = book.get('publisher', 'Unknown Publisher')
             year = book.get('year_of_publication', 0)
             
-            badge_html = '<span class="badge-pill badge-vintage">⏳ Vintage Classic</span>' if year < 2000 else '<span class="badge-pill badge-modern">⚡ Modern Era</span>'
+            badge_html = '<span class="badge-pill badge-vintage">⏳ Vintage Classic</span>' if year < 2000 else '<span class="badge-pill badge-modern">✨ Modern Era</span>'
 
             st.markdown(f"""
             <div class="book-card">
-                <img src="{image_url}" style="width: 115px; height: 165px; object-fit: cover; border-radius: 6px; filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.5));">
+                <img src="{image_url}" style="width: 120px; height: 175px; object-fit: cover; border-radius: 8px; filter: drop-shadow(0px 6px 12px rgba(0,0,0,0.4));">
                 <div style="width:100%;">
                     <div class="book-title" title="{book_title}">{book_title}</div>
                     <div class="book-meta">✍️ <b>{book_author}</b></div>
                     <div class="book-meta">🏢 <small>{publisher}</small></div>
                     <div class="book-meta">📅 <small>Published: {year if year > 0 else 'N/A'}</small></div>
-                    <div style="text-align: left; width: 100%; margin-bottom: 12px;">{badge_html}</div>
+                    <div style="text-align: left; width: 100%; margin-bottom: 14px;">{badge_html}</div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
             
-            if st.button("🔎 Inspect Blueprint", key=f"btn_{isbn}_{index}", use_container_width=True):
+            if st.button("📖 View Book Details", key=f"btn_{isbn}_{index}", use_container_width=True):
                 st.session_state.selected_isbn = isbn
                 st.rerun()
 
 def display_book_details_view(isbn, book_data, book_similarities):
-    if st.button("← Back to Discovery Dashboard", use_container_width=True):
+    if st.button("← Back to Bookstore Home", use_container_width=True):
         st.session_state.selected_isbn = None
         st.rerun()
         
@@ -271,39 +251,39 @@ def display_book_details_view(isbn, book_data, book_similarities):
             st.image(book['image_url'], use_container_width=True)
         with col2:
             st.title(book['book_title'])
-            st.markdown(f"### ✍️ Author: `{book['book_author']}`")
+            st.markdown(f"### By **{book['book_author']}**")
             
-            # Premium Web-Style Metrics Container
+            # Premium Book Information Cards
             st.markdown(f"""
-            <div class="metric-container">
-                <div class="metric-label">🏢 Publishing House</div>
-                <div class="metric-value">{book['publisher']}</div>
+            <div class="info-container">
+                <div class="info-label">Publisher</div>
+                <div class="info-value">{book['publisher']}</div>
             </div>
-            <div class="metric-container">
-                <div class="metric-label">📅 Release Timestamp</div>
-                <div class="metric-value">Year {book['year_of_publication']}</div>
+            <div class="info-container">
+                <div class="info-label">Publication Year</div>
+                <div class="info-value">{book['year_of_publication']}</div>
             </div>
-            <div class="metric-container">
-                <div class="metric-label">🆔 Global Catalog Identifier (ISBN)</div>
-                <div class="metric-value" style="font-family: monospace; font-size: 16px;">{isbn}</div>
+            <div class="info-container">
+                <div class="info-label">Book ISBN</div>
+                <div class="info-value" style="font-family: monospace; font-size: 16px;">{isbn}</div>
             </div>
-            <div class="metric-container" style="border-left: 4px solid {CONFIG['success_color']};">
-                <div class="metric-label" style="color: {CONFIG['success_color']};">System Cross-Vector Status</div>
-                <div class="metric-value" style="color: #FFF;">Verified Active <span style="font-size:14px; color:#8B949E;">(Top 5% Tier)</span></div>
+            <div class="info-container" style="border-left: 4px solid {CONFIG['success_color']};">
+                <div class="info-label" style="color: {CONFIG['success_color']};">Availability</div>
+                <div class="info-value" style="color: #FFF;">In Stock <span style="font-size:13px; color:#9CA3AF;">(Ready to ship)</span></div>
             </div>
             """, unsafe_allow_html=True)
 
         st.markdown("---")
-        st.subheader("✨ Structural Neighborhood Vectors (Readers Also Liked)")
+        st.subheader("✨ Customers Who Read This Also Enjoyed")
         
         similar_isbns = get_similar_books(isbn, book_similarities)
         if similar_isbns:
             similar_books = get_book_details(similar_isbns, book_data)
             display_book_cards_grid(similar_books)
         else:
-            st.caption("No vector representations established for this title option.")
+            st.caption("No recommendations available for this specific title yet.")
     else:
-        st.error("Requested catalog details metadata missing.")
+        st.error("We couldn't retrieve the details for this book catalog item.")
 
 # ---------------------------
 # Main Routing Application Runtime
@@ -314,81 +294,85 @@ def main():
     if "selected_isbn" not in st.session_state:
         st.session_state.selected_isbn = None
 
-    # Sidebar Component Enclosure Layout
+    # E-Commerce Sidebar Setup
     with st.sidebar:
         st.markdown("<h2 style='color:#FFF; margin-bottom:0;'>📚 NovelNexus</h2>", unsafe_allow_html=True)
-        st.caption("Context-Aware Engine Framework")
+        st.caption("Your Personalized Digital Bookshelf")
         st.markdown("---")
         
-        render_architecture_tree()
+        st.markdown("""
+        <div class="nav-node">🏠 <b>Home Discovery</b></div>
+        <div class="nav-node">🔖 <b>My Reading Lists</b></div>
+        <div class="nav-node">🔥 <b>Global Best Sellers</b></div>
+        """, unsafe_allow_html=True)
         st.markdown("---")
         
-        st.subheader("👨‍💻 System Architect")
-        st.markdown("**Tanvir Anzum**\n*AI & Analytics Strategist*")
+        st.subheader("👤 Account Manager")
+        st.markdown("**Tanvir Anzum**\n*Chief Curator*")
 
-    # Interactive Screen Router View Routing Rules
+    # Interactive Route Switching
     if st.session_state.selected_isbn:
         display_book_details_view(st.session_state.selected_isbn, book_data, book_similarities)
     else:
-        st.title("📚 NovelNexus Discovery Portal")
-        st.markdown("Select a User ID profile below to compute multiple dynamic target clustering vectors in real-time.")
+        st.title("📚 Personalized Book Discovery")
+        st.markdown("Switch profiles below to browse matching literary selections curated entirely around individual tastes.")
         
-        # Dashboard Input Layer
+        # Dashboard Profiler Controller
         ctrl_col1, ctrl_col2 = st.columns([2, 3])
         with ctrl_col1:
-            user_id = st.selectbox("🎯 Active Pipeline Profile Vector:", user_info['user_id'].unique())
+            user_id = st.selectbox("🎯 Select Active Shopping Profile:", user_info['user_id'].unique())
         with ctrl_col2:
             st.markdown("<div style='margin-top:25px;'></div>", unsafe_allow_html=True)
-            status = st.status("Computing recommendation weights...", expanded=False)
-            status.update(label="Matrices Fully Calculated & Cached", state="complete")
+            status = st.status("Assembling catalogs...", expanded=False)
+            status.update(label="Shelves stocked with matches!", state="complete")
             
         user_row = user_info[user_info['user_id'] == user_id].iloc[0]
         st.markdown("---")
         
-        # Tab Matrix Stratification Setup Layer
+        # User Tab Views
         tab1, tab2, tab3 = st.tabs([
-            "🤝 Collaborative Neighborhoods", 
-            "👥 Generational Demographics", 
-            "📍 Geographic Locality Metrics"
+            "🤝 Handpicked For You", 
+            "👥 Popular Among Your Peers", 
+            "📍 Trending In Your Area"
         ])
         
         with tab1:
-            st.markdown("### Peer Latent Factor Embeddings")
-            st.caption("Recommendations extracted based on collaborative similarity matrices inside the model.")
+            st.markdown("### Handpicked For You")
+            st.caption("Top picks matching your unique taste profile and previous interaction history.")
             
             sub_col1, sub_col2 = st.columns([1, 1])
             with sub_col1:
-                search_t1 = st.text_input("🔍 Filter by name/author:", key="src_t1", placeholder="Type to search...")
+                search_t1 = st.text_input("🔍 Search this list:", key="src_t1", placeholder="Search title or author...")
             with sub_col2:
-                years_t1 = st.slider("📅 Publication Era Window:", 1950, 2026, (1970, 2026), key="yr_t1")
+                years_t1 = st.slider("📅 Limit by Publication Era:", 1950, 2026, (1970, 2026), key="yr_t1")
                 
             st.markdown("<br>", unsafe_allow_html=True)
             collab_ids = convert_to_list(user_row['collaborative_cluster_recommendation'])[:10]
             display_book_cards_grid(get_book_details(collab_ids, book_data), search_term=search_t1, year_range=years_t1)
             
         with tab2:
-            st.markdown("### Age & Persona Cluster Affinities")
-            st.caption("High-indexing items identified across cohorts sharing the same user group attributes.")
+            st.markdown("### Popular Among Your Peers")
+            st.caption("Top trending books highly rated by readers in your age group.")
             
             sub_col1, sub_col2 = st.columns([1, 1])
             with sub_col1:
-                search_t2 = st.text_input("🔍 Filter by name/author:", key="src_t2", placeholder="Type to search...")
+                search_t2 = st.text_input("🔍 Search this list:", key="src_t2", placeholder="Search title or author...")
             with sub_col2:
-                years_t2 = st.slider("📅 Publication Era Window:", 1950, 2026, (1970, 2026), key="yr_t2")
+                years_t2 = st.slider("📅 Limit by Publication Era:", 1950, 2026, (1970, 2026), key="yr_t2")
                 
             st.markdown("<br>", unsafe_allow_html=True)
             demo_ids = convert_to_list(user_row['demographic_recommendation'])[:10]
             display_book_cards_grid(get_book_details(demo_ids, book_data), search_term=search_t2, year_range=years_t2)
             
         with tab3:
-            st.markdown("### Territory & Regional Density Hotspots")
-            st.caption("Popular selections calculated from aggregate interactions localized within the same geographic region.")
+            st.markdown("### Trending In Your Area")
+            st.caption("Community favorites frequently bought and checked out within your geographic region.")
             
             sub_col1, sub_col2 = st.columns([1, 1])
             with sub_col1:
-                search_t3 = st.text_input("🔍 Filter by name/author:", key="src_t3", placeholder="Type to search...")
+                search_t3 = st.text_input("🔍 Search this list:", key="src_t3", placeholder="Search title or author...")
             with sub_col2:
-                years_t3 = st.slider("📅 Publication Era Window:", 1950, 2026, (1970, 2026), key="yr_t3")
+                years_t3 = st.slider("📅 Limit by Publication Era:", 1950, 2026, (1970, 2026), key="yr_t3")
                 
             st.markdown("<br>", unsafe_allow_html=True)
             geo_ids = convert_to_list(user_row['geographic_recommendation'])[:10]
