@@ -12,8 +12,6 @@ if "selected_isbn" not in st.session_state:
     st.session_state.selected_isbn = None
 if "reading_list" not in st.session_state:
     st.session_state.reading_list = []
-if "current_page" not in st.session_state:
-    st.session_state.current_page = "🏠 Home Discovery"
 
 # ---------------------------
 # Global Design Theme & Styles
@@ -91,7 +89,6 @@ st.markdown(f"""
         font-weight: 600;
     }}
     
-    /* Clean Modern Badges */
     .badge-pill {{
         display: inline-block;
         padding: 2px 8px;
@@ -103,7 +100,6 @@ st.markdown(f"""
     .badge-vintage {{ background: rgba(245, 158, 11, 0.15); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.25); }}
     .badge-modern {{ background: rgba(59, 130, 246, 0.15); color: #3B82F6; border: 1px solid rgba(59, 130, 246, 0.25); }}
     
-    /* Metadata Cards */
     .info-container {{
         background: #1A1D24;
         border: 1px solid #2D3139;
@@ -212,7 +208,7 @@ def display_book_cards_grid(book_details, search_term="", year_range=None):
         ]
 
     if filtered_df.empty:
-        st.markdown("<div style='padding:30px; background:#1A1D24; border-radius:10px; border:1px dashed #2D3139; text-align:center; color:#9CA3AF;'>No matching volumes found in this library shelf.</div>", unsafe_allow_html=True)
+        st.markdown("<div style='padding:20px; background:#1A1D24; border-radius:10px; border:1px dashed #2D3139; text-align:center; color:#9CA3AF;'>No matching volumes found on this shelf.</div>", unsafe_allow_html=True)
         return
 
     cols = st.columns(5)
@@ -242,7 +238,6 @@ def display_book_cards_grid(book_details, search_term="", year_range=None):
             </div>
             """, unsafe_allow_html=True)
             
-            # Interactive Action Row
             btn_col1, btn_col2 = st.columns(2)
             with btn_col1:
                 if st.button("📖 Details", key=f"det_{isbn}_{index}", use_container_width=True):
@@ -306,81 +301,80 @@ with st.sidebar:
     st.markdown("<h2 style='color:#FFF; margin-bottom:0;'>📚 NovelNexus</h2>", unsafe_allow_html=True)
     st.caption("Your Premium AI Bookstore")
     st.markdown("---")
-    
-    # Fully functional Navigation Router
-    st.session_state.current_page = st.radio(
-        "Navigation Portal",
-        ["🏠 Home Discovery", "🔖 My Reading Lists", "🔥 Global Best Sellers"],
-        label_visibility="collapsed"
-    )
-    st.markdown("---")
-    
-    st.subheader("👤 Premium Client Profile")
+    st.subheader("👤 Account Profile")
     st.markdown("**Tanvir Anzum**\n*Chief Curator*")
     st.caption(f"Items Saved: {len(st.session_state.reading_list)}")
 
 # ---------------------------
-# Main Router Runtime Engine
+# Main Routing Application Engine
 # ---------------------------
 if st.session_state.selected_isbn:
     display_book_details_view(st.session_state.selected_isbn, book_data, book_similarities)
 else:
-    if st.session_state.current_page == "🏠 Home Discovery":
-        # Global Search Engine Header Layout
-        st.title("📚 Discovery Marketplace")
+    st.title("📚 Discovery Marketplace")
+    
+    # Global Header Controller Panel
+    h_col1, h_col2 = st.columns([3, 1])
+    with h_col1:
+        global_search = st.text_input("🔍 Search entire catalog...", placeholder="Type title, author or keywords to dynamically filter shelves below...")
+    with h_col2:
+        user_id = st.selectbox("🎯 Active Personalization Profile:", user_info['user_id'].unique())
         
-        h_col1, h_col2 = st.columns([3, 1])
-        with h_col1:
-            global_search = st.text_input("🔍 Search catalog by title, author name or keywords...", placeholder="Type here to instantly query catalog ecosystem...")
-        with h_col2:
-            user_id = st.selectbox("🎯 Active Shopping Profile:", user_info['user_id'].unique())
-            
-        user_row = user_info[user_info['user_id'] == user_id].iloc[0]
+    user_row = user_info[user_info['user_id'] == user_id].iloc[0]
+    st.markdown("---")
+    
+    # Unified Navigation Tab Stack
+    tab_all, tab1, tab2, tab3, tab_saved = st.tabs([
+        "📚 All Books", 
+        "🤝 Handpicked For You", 
+        "👥 Popular Among Peers", 
+        "📍 Trending In Your Area",
+        f"🔖 Saved List ({len(st.session_state.reading_list)})"
+    ])
+    
+    # 1. CATEGORY VIEW FIRST
+    with tab_all:
+        st.markdown("### Browse Categories")
+        
+        # Category A
+        st.markdown("#### ⏳ Vintage Classics (Published Before 2000)")
+        vintage_books = book_data[book_data['year_of_publication'] < 2000]
+        display_book_cards_grid(vintage_books[:10], search_term=global_search)
+        
         st.markdown("---")
         
-        # Segmented Recommender Engine System Tabs
-        tab1, tab2, tab3 = st.tabs([
-            "🤝 Curated Flavor Profile", 
-            "👥 Popular Among Your Peers", 
-            "📍 Trending In Your Region"
-        ])
+        # Category B
+        st.markdown("#### ✨ Modern Era Hits (Published 2000 & Later)")
+        modern_books = book_data[book_data['year_of_publication'] >= 2000]
+        display_book_cards_grid(modern_books[:10], search_term=global_search)
         
-        with tab1:
-            st.markdown("### Handpicked For You")
-            st.caption("Algorithmic matrix matches tailored explicitly to your historical engagement data.")
-            years_t1 = st.slider("Era Range Limit:", 1950, 2026, (1970, 2026), key="yr_t1")
-            collab_ids = convert_to_list(user_row['collaborative_cluster_recommendation'])[:10]
-            display_book_cards_grid(get_book_details(collab_ids, book_data), search_term=global_search, year_range=years_t1)
-            
-        with tab2:
-            st.markdown("### Peer Demographic Trends")
-            st.caption("High volume sales matches intersecting cleanly within your baseline social circle framework.")
-            years_t2 = st.slider("Era Range Limit:", 1950, 2026, (1970, 2026), key="yr_t2")
-            demo_ids = convert_to_list(user_row['demographic_recommendation'])[:10]
-            display_book_cards_grid(get_book_details(demo_ids, book_data), search_term=global_search, year_range=years_t2)
-            
-        with tab3:
-            st.markdown("### Regional Best Sellers")
-            st.caption("Geographically dense transaction spikes surrounding your delivery zones.")
-            years_t3 = st.slider("Era Range Limit:", 1950, 2026, (1970, 2026), key="yr_t3")
-            geo_ids = convert_to_list(user_row['geographic_recommendation'])[:10]
-            display_book_cards_grid(get_book_details(geo_ids, book_data), search_term=global_search, year_range=years_t3)
+    # 2. PERSONALIZED RECOMMENDATIONS
+    with tab1:
+        st.markdown("### Handpicked For You")
+        st.caption("Tailored explicitly to your historical alignment index.")
+        collab_ids = convert_to_list(user_row['collaborative_cluster_recommendation'])[:10]
+        display_book_cards_grid(get_book_details(collab_ids, book_data), search_term=global_search)
+        
+    with tab2:
+        st.markdown("### Peer Demographic Trends")
+        st.caption("Top sales matches intersecting within your age demographics.")
+        demo_ids = convert_to_list(user_row['demographic_recommendation'])[:10]
+        display_book_cards_grid(get_book_details(demo_ids, book_data), search_term=global_search)
+        
+    with tab3:
+        st.markdown("### Regional Best Sellers")
+        st.caption("Dense geo-transaction patterns near your zone.")
+        geo_ids = convert_to_list(user_row['geographic_recommendation'])[:10]
+        display_book_cards_grid(get_book_details(geo_ids, book_data), search_term=global_search)
 
-    elif st.session_state.current_page == "🔖 My Reading Lists":
-        st.title("🔖 Your Saved Reading Vault")
-        st.markdown("Keep track of your favored choices before checkout processing.")
-        
+    # 3. SAVED USER REPOSITORY
+    with tab_saved:
+        st.markdown("### Your Vault Workspace")
         if st.session_state.reading_list:
-            if st.button("🗑️ Clear Entire List"):
+            if st.button("🗑️ Clear Entire List", use_container_width=True):
                 st.session_state.reading_list = []
                 st.rerun()
             saved_books = get_book_details(st.session_state.reading_list, book_data)
             display_book_cards_grid(saved_books)
         else:
-            st.info("Your list is currently empty. Explore the catalog home screen to build out your curated shelf profile.")
-
-    elif st.session_state.current_page == "🔥 Global Best Sellers":
-        st.title("🔥 Global Best Sellers")
-        st.markdown("The highest volume titles globally across all platform registers.")
-        # Default fallback view showcasing all distinct indexed library books
-        display_book_cards_grid(book_data[:10])
+            st.info("Your list is currently empty. Hit 'Save' on items across other tabs to assemble your digital cart shelf.")
