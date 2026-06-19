@@ -3,9 +3,9 @@ import pandas as pd  # type: ignore
 import ast
 
 # ---------------------------
-# Page Config (MUST be first Streamlit call)
+# Page Config (Must be the very first Streamlit call)
 # ---------------------------
-st.set_page_config(page_title="NovelNexus v2", page_icon="✨", layout="wide")
+st.set_page_config(page_title="NovelNexus", page_icon="📚", layout="wide")
 
 # ---------------------------
 # Global Configuration & Styles
@@ -29,7 +29,7 @@ st.markdown(f"""
     }}
     
     /* Modernized Book Card Design */
-    .book-card-v2 {{
+    .book-card {{
         background: {CONFIG['card_bg']};
         border: 1px solid {CONFIG['card_border']};
         border-radius: 12px;
@@ -43,12 +43,12 @@ st.markdown(f"""
         justify-content: space-between;
         align-items: center;
     }}
-    .book-card-v2:hover {{
+    .book-card:hover {{
         transform: translateY(-4px);
         box-shadow: 0 12px 24px rgba(88, 166, 255, 0.18);
         border-color: {CONFIG['accent_color']};
     }}
-    .book-title-v2 {{
+    .book-title {{
         font-size: 15px;
         font-weight: 600;
         color: #F0F6FC;
@@ -60,7 +60,7 @@ st.markdown(f"""
         -webkit-box-orient: vertical;
         overflow: hidden;
     }}
-    .book-meta-v2 {{
+    .book-meta {{
         font-size: 12.5px;
         color: #8B949E;
         margin: 4px 0;
@@ -84,6 +84,28 @@ st.markdown(f"""
     .badge-vintage {{ background: #482715; color: #FF944D; border: 1px solid #FF944D33; }}
     .badge-modern {{ background: #153248; color: #58A6FF; border: 1px solid #58A6FF33; }}
     
+    /* Custom Web-Style Dashboard Metric Cards */
+    .metric-container {{
+        background: #161B22;
+        border: 1px solid #30363D;
+        border-radius: 8px;
+        padding: 15px;
+        text-align: left;
+        margin-bottom: 15px;
+    }}
+    .metric-label {{
+        font-size: 12px;
+        color: #8B949E;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }}
+    .metric-value {{
+        font-size: 20px;
+        font-weight: bold;
+        color: #58A6FF;
+        margin-top: 5px;
+    }}
+
     /* Architecture Tree Styles */
     .pipeline-node {{
         background: #161B22;
@@ -115,18 +137,18 @@ def load_data():
         book_data = pd.read_parquet("data/preprocessed_files/distinct_books.parquet")
         book_similarities = pd.read_csv("data/recommender_result/book_similarities.csv")
     except Exception:
-        # Graceful development fallback framework matrix
+        # Development fallback matrix containing 10 items for deep rendering verification
         user_combined_recommendations = pd.DataFrame({
             'user_id': [1001, 1002, 1003],
-            'geographic_recommendation': ["['0345339681', '0449212602']", "[]", "[]"],
-            'demographic_recommendation': ["['0345339681']", "['0449212602']", "[]"],
-            'collaborative_cluster_recommendation': ["['0345339681', '0449212602']", "[]", "[]"]
+            'geographic_recommendation': ["['0345339681', '0449212602', '0345339681', '0449212602', '0345339681', '0449212602', '0345339681', '0449212602', '0345339681', '0449212602']", "[]", "[]"],
+            'demographic_recommendation': ["['0345339681', '0449212602', '0345339681', '0449212602', '0345339681', '0449212602', '0345339681', '0449212602', '0345339681', '0449212602']", "['0449212602']", "[]"],
+            'collaborative_cluster_recommendation': ["['0345339681', '0449212602', '0345339681', '0449212602', '0345339681', '0449212602', '0345339681', '0449212602', '0345339681', '0449212602']", "[]", "[]"]
         })
         book_data = pd.DataFrame({
             'isbn': ['0345339681', '0449212602'], 
-            'book_title': ['The Hobbit', 'The Handmaids Tale'], 
+            'book_title': ['The Hobbit', 'The Handmaid\'s Tale'], 
             'book_author': ['J.R.R. Tolkien', 'Margaret Atwood'],
-            'publisher': ['Ballantine', 'Fawcett'], 
+            'publisher': ['Ballantine Books', 'Fawcett Books'], 
             'year_of_publication': [1986, 1998], 
             'image_url': ['https://images.amazon.com/images/P/0345339681.01.MZZZZZZZ.jpg', 'https://images.amazon.com/images/P/0449212602.01.MZZZZZZZ.jpg']
         })
@@ -155,7 +177,7 @@ def get_similar_books(isbn, book_similarities):
     if not similar_books.empty:
         similar_isbns = similar_books.iloc[0]['similar_books']
         if isinstance(similar_isbns, str):
-            return [x.strip() for x in similar_isbns.split(",")][:6]
+            return [x.strip() for x in similar_isbns.split(",")][:10]
     return []
 
 def get_book_details(isbns, book_data):
@@ -163,7 +185,6 @@ def get_book_details(isbns, book_data):
     valid_isbns = [str(i) for i in isbns]
     book_details = book_data[book_data['isbn'].astype(str).isin(valid_isbns)].copy()
     book_details['isbn'] = book_details['isbn'].astype(str)
-    # Deduplicate matching strings gracefully
     book_details = book_details.drop_duplicates(subset=['isbn']).set_index('isbn').reindex(valid_isbns).reset_index()
     return book_details.dropna(subset=['book_title'])
 
@@ -183,18 +204,15 @@ def render_architecture_tree():
 def display_book_cards_grid(book_details, search_term="", year_range=None):
     filtered_df = book_details.copy()
     
-    # 🌟 GLOBAL FIX: Ensure year column is ALWAYS numeric at the entry point
     if 'year_of_publication' in filtered_df.columns:
         filtered_df['year_of_publication'] = pd.to_numeric(filtered_df['year_of_publication'], errors='coerce').fillna(0).astype(int)
     
-    # 1. Search Query Sub-filtration Layer
     if search_term:
         filtered_df = filtered_df[
             filtered_df['book_title'].str.contains(search_term, case=False, na=False) |
             filtered_df['book_author'].str.contains(search_term, case=False, na=False)
         ]
         
-    # 2. Slider Window Sub-filtration Layer
     if year_range:
         filtered_df = filtered_df[
             (filtered_df['year_of_publication'] >= year_range[0]) &
@@ -203,11 +221,11 @@ def display_book_cards_grid(book_details, search_term="", year_range=None):
 
     if filtered_df.empty:
         st.markdown("""<div style='padding:20px; background:#161B22; border-radius:8px; border:1px dashed #30363D; text-align:center; color:#8B949E;'>
-                    No vector targets match your current sub-filter query settings.
+                    No target selections match your current sub-filter configurations.
                     </div>""", unsafe_allow_html=True)
         return
 
-    # Fluid 3-Column Grid Execution Matrix
+    # Fluid 3-Column Grid Layout Configuration
     cols = st.columns(3)
     for index, (_, book) in enumerate(filtered_df.iterrows()):
         col = cols[index % 3]
@@ -217,20 +235,19 @@ def display_book_cards_grid(book_details, search_term="", year_range=None):
             book_title = book.get('book_title', 'Unknown Title')
             book_author = book.get('book_author', 'Unknown Author')
             publisher = book.get('publisher', 'Unknown Publisher')
-            year = book.get('year_of_publication', 0)  # Safe integer extraction
+            year = book.get('year_of_publication', 0)
             
-            # ✅ Guaranteed to evaluate safely without TypeError
             badge_html = '<span class="badge-pill badge-vintage">⏳ Vintage Classic</span>' if year < 2000 else '<span class="badge-pill badge-modern">⚡ Modern Era</span>'
 
             st.markdown(f"""
-            <div class="book-card-v2">
+            <div class="book-card">
                 <img src="{image_url}" style="width: 115px; height: 165px; object-fit: cover; border-radius: 6px; filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.5));">
                 <div style="width:100%;">
-                    <div class="book-title-v2" title="{book_title}">{book_title}</div>
-                    <div class="book-meta-v2">✍️ <b>{book_author}</b></div>
-                    <div class="book-meta-v2">🏢 <small>{publisher}</small></div>
-                    <div class="book-meta-v2">📅 <small>Published: {year if year > 0 else 'N/A'}</small></div>
-                    <div style="text-align: left; width: 100%;">{badge_html}</div>
+                    <div class="book-title" title="{book_title}">{book_title}</div>
+                    <div class="book-meta">✍️ <b>{book_author}</b></div>
+                    <div class="book-meta">🏢 <small>{publisher}</small></div>
+                    <div class="book-meta">📅 <small>Published: {year if year > 0 else 'N/A'}</small></div>
+                    <div style="text-align: left; width: 100%; margin-bottom: 12px;">{badge_html}</div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -256,14 +273,25 @@ def display_book_details_view(isbn, book_data, book_similarities):
             st.title(book['book_title'])
             st.markdown(f"### ✍️ Author: `{book['book_author']}`")
             
-            # Interactive Information Matrix Card
-            with st.container(border=True):
-                st.markdown(f"""
-                * **🏢 Publishing House:** {book['publisher']}  
-                * **📅 Release Timestamp:** Year {book['year_of_publication']}  
-                * **🆔 Global Catalog Identifier (ISBN):** `{isbn}`
-                """)
-                st.metric(label="System Cross-Vector Status", value="Verified Active", delta="Top 5% Tier")
+            # Premium Web-Style Metrics Container
+            st.markdown(f"""
+            <div class="metric-container">
+                <div class="metric-label">🏢 Publishing House</div>
+                <div class="metric-value">{book['publisher']}</div>
+            </div>
+            <div class="metric-container">
+                <div class="metric-label">📅 Release Timestamp</div>
+                <div class="metric-value">Year {book['year_of_publication']}</div>
+            </div>
+            <div class="metric-container">
+                <div class="metric-label">🆔 Global Catalog Identifier (ISBN)</div>
+                <div class="metric-value" style="font-family: monospace; font-size: 16px;">{isbn}</div>
+            </div>
+            <div class="metric-container" style="border-left: 4px solid {CONFIG['success_color']};">
+                <div class="metric-label" style="color: {CONFIG['success_color']};">System Cross-Vector Status</div>
+                <div class="metric-value" style="color: #FFF;">Verified Active <span style="font-size:14px; color:#8B949E;">(Top 5% Tier)</span></div>
+            </div>
+            """, unsafe_allow_html=True)
 
         st.markdown("---")
         st.subheader("✨ Structural Neighborhood Vectors (Readers Also Liked)")
@@ -275,7 +303,7 @@ def display_book_details_view(isbn, book_data, book_similarities):
         else:
             st.caption("No vector representations established for this title option.")
     else:
-        st.error("Requested catalog ID details metadata missing.")
+        st.error("Requested catalog details metadata missing.")
 
 # ---------------------------
 # Main Routing Application Runtime
@@ -289,7 +317,7 @@ def main():
     # Sidebar Component Enclosure Layout
     with st.sidebar:
         st.markdown("<h2 style='color:#FFF; margin-bottom:0;'>📚 NovelNexus</h2>", unsafe_allow_html=True)
-        st.caption("Context-Aware Engine Framework v2")
+        st.caption("Context-Aware Engine Framework")
         st.markdown("---")
         
         render_architecture_tree()
@@ -305,7 +333,7 @@ def main():
         st.title("📚 NovelNexus Discovery Portal")
         st.markdown("Select a User ID profile below to compute multiple dynamic target clustering vectors in real-time.")
         
-        # Super Interactive Dashboard Control Bar Layer
+        # Dashboard Input Layer
         ctrl_col1, ctrl_col2 = st.columns([2, 3])
         with ctrl_col1:
             user_id = st.selectbox("🎯 Active Pipeline Profile Vector:", user_info['user_id'].unique())
@@ -328,7 +356,6 @@ def main():
             st.markdown("### Peer Latent Factor Embeddings")
             st.caption("Recommendations extracted based on collaborative similarity matrices inside the model.")
             
-            # Internal sub-filters for dynamic interactivity
             sub_col1, sub_col2 = st.columns([1, 1])
             with sub_col1:
                 search_t1 = st.text_input("🔍 Filter by name/author:", key="src_t1", placeholder="Type to search...")
@@ -336,7 +363,7 @@ def main():
                 years_t1 = st.slider("📅 Publication Era Window:", 1950, 2026, (1970, 2026), key="yr_t1")
                 
             st.markdown("<br>", unsafe_allow_html=True)
-            collab_ids = convert_to_list(user_row['collaborative_cluster_recommendation'])[:6]
+            collab_ids = convert_to_list(user_row['collaborative_cluster_recommendation'])[:10]
             display_book_cards_grid(get_book_details(collab_ids, book_data), search_term=search_t1, year_range=years_t1)
             
         with tab2:
@@ -350,7 +377,7 @@ def main():
                 years_t2 = st.slider("📅 Publication Era Window:", 1950, 2026, (1970, 2026), key="yr_t2")
                 
             st.markdown("<br>", unsafe_allow_html=True)
-            demo_ids = convert_to_list(user_row['demographic_recommendation'])[:6]
+            demo_ids = convert_to_list(user_row['demographic_recommendation'])[:10]
             display_book_cards_grid(get_book_details(demo_ids, book_data), search_term=search_t2, year_range=years_t2)
             
         with tab3:
@@ -364,7 +391,7 @@ def main():
                 years_t3 = st.slider("📅 Publication Era Window:", 1950, 2026, (1970, 2026), key="yr_t3")
                 
             st.markdown("<br>", unsafe_allow_html=True)
-            geo_ids = convert_to_list(user_row['geographic_recommendation'])[:6]
+            geo_ids = convert_to_list(user_row['geographic_recommendation'])[:10]
             display_book_cards_grid(get_book_details(geo_ids, book_data), search_term=search_t3, year_range=years_t3)
 
 if __name__ == "__main__":
