@@ -181,22 +181,21 @@ def render_architecture_tree():
     """, unsafe_allow_html=True)
 
 def display_book_cards_grid(book_details, search_term="", year_range=None):
-    # Apply client-side inline filters inside strategies dynamically
     filtered_df = book_details.copy()
     
+    # 🌟 GLOBAL FIX: Ensure year column is ALWAYS numeric at the entry point
+    if 'year_of_publication' in filtered_df.columns:
+        filtered_df['year_of_publication'] = pd.to_numeric(filtered_df['year_of_publication'], errors='coerce').fillna(0).astype(int)
+    
+    # 1. Search Query Sub-filtration Layer
     if search_term:
         filtered_df = filtered_df[
             filtered_df['book_title'].str.contains(search_term, case=False, na=False) |
             filtered_df['book_author'].str.contains(search_term, case=False, na=False)
         ]
         
+    # 2. Slider Window Sub-filtration Layer
     if year_range:
-        # 🌟 CRITICAL FIX: Convert string column to numeric, coercion replaces invalid years with NaN
-        filtered_df['year_of_publication'] = pd.to_numeric(filtered_df['year_of_publication'], errors='coerce')
-        
-        # Drop missing records to avoid comparison type errors
-        filtered_df = filtered_df.dropna(subset=['year_of_publication'])
-        
         filtered_df = filtered_df[
             (filtered_df['year_of_publication'] >= year_range[0]) &
             (filtered_df['year_of_publication'] <= year_range[1])
@@ -218,8 +217,9 @@ def display_book_cards_grid(book_details, search_term="", year_range=None):
             book_title = book.get('book_title', 'Unknown Title')
             book_author = book.get('book_author', 'Unknown Author')
             publisher = book.get('publisher', 'Unknown Publisher')
-            year = book.get('year_of_publication', 0)
+            year = book.get('year_of_publication', 0)  # Safe integer extraction
             
+            # ✅ Guaranteed to evaluate safely without TypeError
             badge_html = '<span class="badge-pill badge-vintage">⏳ Vintage Classic</span>' if year < 2000 else '<span class="badge-pill badge-modern">⚡ Modern Era</span>'
 
             st.markdown(f"""
@@ -229,7 +229,7 @@ def display_book_cards_grid(book_details, search_term="", year_range=None):
                     <div class="book-title-v2" title="{book_title}">{book_title}</div>
                     <div class="book-meta-v2">✍️ <b>{book_author}</b></div>
                     <div class="book-meta-v2">🏢 <small>{publisher}</small></div>
-                    <div class="book-meta-v2">📅 <small>Published: {year}</small></div>
+                    <div class="book-meta-v2">📅 <small>Published: {year if year > 0 else 'N/A'}</small></div>
                     <div style="text-align: left; width: 100%;">{badge_html}</div>
                 </div>
             </div>
