@@ -149,6 +149,10 @@ def load_data():
             'image_url': ['https://images.amazon.com/images/P/0345339681.01.MZZZZZZZ.jpg', 'https://images.amazon.com/images/P/0449212602.01.MZZZZZZZ.jpg']
         })
         book_similarities = pd.DataFrame({'isbn': ['0345339681', '0449212602'], 'similar_books': ['0449212602', '0345339681']})
+    
+    # Secure conversion completely inside cache boundary
+    if 'year_of_publication' in book_data.columns:
+        book_data['year_of_publication'] = pd.to_numeric(book_data['year_of_publication'], errors='coerce').fillna(0).astype(int)
         
     return user_combined_recommendations, book_data, book_similarities
 
@@ -192,9 +196,6 @@ def get_book_details(isbns, book_data):
 def display_book_cards_grid(book_details, search_term="", year_range=None):
     filtered_df = book_details.copy()
     
-    if 'year_of_publication' in filtered_df.columns:
-        filtered_df['year_of_publication'] = pd.to_numeric(filtered_df['year_of_publication'], errors='coerce').fillna(0).astype(int)
-    
     if search_term:
         filtered_df = filtered_df[
             filtered_df['book_title'].str.contains(search_term, case=False, na=False) |
@@ -223,6 +224,9 @@ def display_book_cards_grid(book_details, search_term="", year_range=None):
             year = book.get('year_of_publication', 0)
             
             badge_html = '<span class="badge-pill badge-vintage">⏳ Vintage</span>' if year < 2000 else '<span class="badge-pill badge-modern">✨ Modern</span>'
+            
+            is_saved = isbn in st.session_state.reading_list
+            fav_icon = "❤️" if is_saved else "🤍"
 
             st.markdown(f"""
             <div class="book-card">
@@ -238,18 +242,21 @@ def display_book_cards_grid(book_details, search_term="", year_range=None):
             </div>
             """, unsafe_allow_html=True)
             
-            btn_col1, btn_col2 = st.columns(2)
+            btn_col1, btn_col2 = st.columns([5, 3])
             with btn_col1:
-                if st.button("📖 Details", key=f"det_{isbn}_{index}", use_container_width=True):
+                if st.button("📖 Open", key=f"det_{isbn}_{index}", use_container_width=True):
                     st.session_state.selected_isbn = isbn
                     st.rerun()
             with btn_col2:
-                if st.button("🔖 Save", key=f"save_{isbn}_{index}", use_container_width=True):
-                    if isbn not in st.session_state.reading_list:
+                if st.button(fav_icon, key=f"save_{isbn}_{index}", use_container_width=True):
+                    if not is_saved:
                         st.session_state.reading_list.append(isbn)
-                        st.toast(f"Saved to reading list!", icon="✅")
+                        st.toast(f"Saved '{book_title}' to favorites!", icon="❤️")
+                        st.rerun()
                     else:
-                        st.toast("Already in your list!", icon="ℹ️")
+                        st.session_state.reading_list.remove(isbn)
+                        st.toast("Removed from favorites.", icon="🗑️")
+                        st.rerun()
 
 # ---------------------------
 # Individual Views
@@ -303,7 +310,7 @@ with st.sidebar:
     st.markdown("---")
     st.subheader("👤 Account Profile")
     st.markdown("**Tanvir Anzum**\n*Chief Curator*")
-    st.caption(f"Items Saved: {len(st.session_state.reading_list)}")
+    st.caption(f"Favorites Saved: {len(st.session_state.reading_list)}")
 
 # ---------------------------
 # Main Routing Application Engine
@@ -313,7 +320,6 @@ if st.session_state.selected_isbn:
 else:
     st.title("📚 Discovery Marketplace")
     
-    # Global Header Controller Panel
     h_col1, h_col2 = st.columns([3, 1])
     with h_col1:
         global_search = st.text_input("🔍 Search entire catalog...", placeholder="Type title, author or keywords to dynamically filter shelves below...")
@@ -323,27 +329,24 @@ else:
     user_row = user_info[user_info['user_id'] == user_id].iloc[0]
     st.markdown("---")
     
-    # Unified Navigation Tab Stack
     tab_all, tab1, tab2, tab3, tab_saved = st.tabs([
         "📚 All Books", 
         "🤝 Handpicked For You", 
         "👥 Popular Among Peers", 
         "📍 Trending In Your Area",
-        f"🔖 Saved List ({len(st.session_state.reading_list)})"
+        f"❤️ My Favorites ({len(st.session_state.reading_list)})"
     ])
     
     # 1. CATEGORY VIEW FIRST
     with tab_all:
         st.markdown("### Browse Categories")
         
-        # Category A
         st.markdown("#### ⏳ Vintage Classics (Published Before 2000)")
         vintage_books = book_data[book_data['year_of_publication'] < 2000]
         display_book_cards_grid(vintage_books[:10], search_term=global_search)
         
         st.markdown("---")
         
-        # Category B
         st.markdown("#### ✨ Modern Era Hits (Published 2000 & Later)")
         modern_books = book_data[book_data['year_of_publication'] >= 2000]
         display_book_cards_grid(modern_books[:10], search_term=global_search)
@@ -369,7 +372,7 @@ else:
 
     # 3. SAVED USER REPOSITORY
     with tab_saved:
-        st.markdown("### Your Vault Workspace")
+        st.markdown("### Your Favorites Vault")
         if st.session_state.reading_list:
             if st.button("🗑️ Clear Entire List", use_container_width=True):
                 st.session_state.reading_list = []
@@ -377,4 +380,4 @@ else:
             saved_books = get_book_details(st.session_state.reading_list, book_data)
             display_book_cards_grid(saved_books)
         else:
-            st.info("Your list is currently empty. Hit 'Save' on items across other tabs to assemble your digital cart shelf.")
+            st.info("Your favorites vault is empty. Click the heart icon on books inside other tabs to populate this section.")
