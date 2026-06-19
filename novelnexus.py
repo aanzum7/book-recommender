@@ -183,12 +183,20 @@ def render_architecture_tree():
 def display_book_cards_grid(book_details, search_term="", year_range=None):
     # Apply client-side inline filters inside strategies dynamically
     filtered_df = book_details.copy()
+    
     if search_term:
         filtered_df = filtered_df[
             filtered_df['book_title'].str.contains(search_term, case=False, na=False) |
             filtered_df['book_author'].str.contains(search_term, case=False, na=False)
         ]
+        
     if year_range:
+        # 🌟 CRITICAL FIX: Convert string column to numeric, coercion replaces invalid years with NaN
+        filtered_df['year_of_publication'] = pd.to_numeric(filtered_df['year_of_publication'], errors='coerce')
+        
+        # Drop missing records to avoid comparison type errors
+        filtered_df = filtered_df.dropna(subset=['year_of_publication'])
+        
         filtered_df = filtered_df[
             (filtered_df['year_of_publication'] >= year_range[0]) &
             (filtered_df['year_of_publication'] <= year_range[1])
