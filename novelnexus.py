@@ -150,7 +150,6 @@ def load_data():
         })
         book_similarities = pd.DataFrame({'isbn': ['0345339681', '0449212602'], 'similar_books': ['0449212602', '0345339681']})
     
-    # Secure conversion completely inside cache boundary
     if 'year_of_publication' in book_data.columns:
         book_data['year_of_publication'] = pd.to_numeric(book_data['year_of_publication'], errors='coerce').fillna(0).astype(int)
         
@@ -193,7 +192,7 @@ def get_book_details(isbns, book_data):
 # ---------------------------
 # UI Grid Component
 # ---------------------------
-def display_book_cards_grid(book_details, search_term="", year_range=None):
+def display_book_cards_grid(book_details, prefix="default", search_term="", year_range=None):
     filtered_df = book_details.copy()
     
     if search_term:
@@ -244,11 +243,11 @@ def display_book_cards_grid(book_details, search_term="", year_range=None):
             
             btn_col1, btn_col2 = st.columns([5, 3])
             with btn_col1:
-                if st.button("📖 Open", key=f"det_{isbn}_{index}", use_container_width=True):
+                if st.button("📖 Open", key=f"det_{prefix}_{isbn}_{index}", use_container_width=True):
                     st.session_state.selected_isbn = isbn
                     st.rerun()
             with btn_col2:
-                if st.button(fav_icon, key=f"save_{isbn}_{index}", use_container_width=True):
+                if st.button(fav_icon, key=f"save_{prefix}_{isbn}_{index}", use_container_width=True):
                     if not is_saved:
                         st.session_state.reading_list.append(isbn)
                         st.toast(f"Saved '{book_title}' to favorites!", icon="❤️")
@@ -297,7 +296,7 @@ def display_book_details_view(isbn, book_data, book_similarities):
         st.subheader("✨ Readers Who Bought This Also Enjoyed")
         similar_isbns = get_similar_books(isbn, book_similarities)
         if similar_isbns:
-            display_book_cards_grid(get_book_details(similar_isbns, book_data))
+            display_book_cards_grid(get_book_details(similar_isbns, book_data), prefix="similar")
         else:
             st.caption("No recommendations available for this specific title yet.")
 
@@ -343,32 +342,32 @@ else:
         
         st.markdown("#### ⏳ Vintage Classics (Published Before 2000)")
         vintage_books = book_data[book_data['year_of_publication'] < 2000]
-        display_book_cards_grid(vintage_books[:10], search_term=global_search)
+        display_book_cards_grid(vintage_books[:10], prefix="all_vintage", search_term=global_search)
         
         st.markdown("---")
         
         st.markdown("#### ✨ Modern Era Hits (Published 2000 & Later)")
         modern_books = book_data[book_data['year_of_publication'] >= 2000]
-        display_book_cards_grid(modern_books[:10], search_term=global_search)
+        display_book_cards_grid(modern_books[:10], prefix="all_modern", search_term=global_search)
         
     # 2. PERSONALIZED RECOMMENDATIONS
     with tab1:
         st.markdown("### Handpicked For You")
         st.caption("Tailored explicitly to your historical alignment index.")
         collab_ids = convert_to_list(user_row['collaborative_cluster_recommendation'])[:10]
-        display_book_cards_grid(get_book_details(collab_ids, book_data), search_term=global_search)
+        display_book_cards_grid(get_book_details(collab_ids, book_data), prefix="curated", search_term=global_search)
         
     with tab2:
         st.markdown("### Peer Demographic Trends")
         st.caption("Top sales matches intersecting within your age demographics.")
         demo_ids = convert_to_list(user_row['demographic_recommendation'])[:10]
-        display_book_cards_grid(get_book_details(demo_ids, book_data), search_term=global_search)
+        display_book_cards_grid(get_book_details(demo_ids, book_data), prefix="demographic", search_term=global_search)
         
     with tab3:
         st.markdown("### Regional Best Sellers")
         st.caption("Dense geo-transaction patterns near your zone.")
         geo_ids = convert_to_list(user_row['geographic_recommendation'])[:10]
-        display_book_cards_grid(get_book_details(geo_ids, book_data), search_term=global_search)
+        display_book_cards_grid(get_book_details(geo_ids, book_data), prefix="geographic", search_term=global_search)
 
     # 3. SAVED USER REPOSITORY
     with tab_saved:
@@ -378,6 +377,6 @@ else:
                 st.session_state.reading_list = []
                 st.rerun()
             saved_books = get_book_details(st.session_state.reading_list, book_data)
-            display_book_cards_grid(saved_books)
+            display_book_cards_grid(saved_books, prefix="vault")
         else:
             st.info("Your favorites vault is empty. Click the heart icon on books inside other tabs to populate this section.")
