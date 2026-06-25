@@ -354,38 +354,54 @@ def display_book_details_view(isbn):
         show_witty_error(e, feature_context="Item Detailed Description Stage")
 
 # ---------------------------
-# Sidebar Frame With Fixed Bottom Dynamic Profiles
+# Sidebar Frame With Matching Premium Styles
 # ---------------------------
 with st.sidebar:
-    st.markdown("<h2 style='color:#FFF; margin-bottom:0;'>📚 NovelNexus</h2>", unsafe_allow_html=True)
-    st.caption("Your Premium AI Bookstore")
-    st.markdown("---")
-    
-    # Render count safely regardless of object state types
-    saved_count = len(st.session_state.reading_list) if isinstance(st.session_state.reading_list, (set, list)) else 0
-    st.metric(label="Active Session Saved Items", value=saved_count)
-    
-    st.markdown("---")
-    st.title("👨‍💻 About the Author")
-    st.caption("Tanvir Anzum – AI & Data Researcher")
+    # App Branding
     st.markdown("""
-        <div style='font-size: 14px; font-weight: normal;'>
-        Passionate about turning <strong>data into insights</strong> and building <strong>AI-powered tools</strong> for real-world impact.
+        <div style="text-align: center; padding: 10px 0;">
+            <h2 style='color:#FFFFFF; margin-bottom:0; font-weight:700; letter-spacing: -0.03em;'>📚 NovelNexus</h2>
+            <div style='color:#4F46E5; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-top:2px;'>
+                Premium AI Bookstore
+            </div>
         </div>
     """, unsafe_allow_html=True)
-
-    st.markdown("""
-        <div style='font-size: 14px; font-weight: normal;'>
+    st.markdown("---")
+    
+    # Matching Session KPI Metric Card
+    saved_count = len(st.session_state.reading_list) if isinstance(st.session_state.reading_list, (set, list)) else 0
+    
+    st.markdown(f"""
+        <div style="background: {CONFIG['card_bg']}; border: 1px solid {CONFIG['card_border']}; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <div class="info-label" style="text-align: center; margin-bottom: 4px;">Active Session Saved Items</div>
+            <div style="font-size: 36px; font-weight: 700; color: {CONFIG['accent_color']}; line-height: 1.1;">{saved_count}</div>
+        </div>
         <br>
-        <a href="https://www.linkedin.com/in/aanzum" target="_blank">
-            <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" alt="LinkedIn" width="16" style="vertical-align:middle; margin-right:6px;">
-            <strong>LinkedIn</strong>
-        </a>
-        &nbsp;&nbsp;
-        <a href="https://www.researchgate.net/profile/Tanvir-Anzum" target="_blank">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/ResearchGate_icon_SVG.svg" alt="ResearchGate" width="16" style="vertical-align:middle; margin-right:6px;">
-            <strong>Research</strong>
-        </a>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    # Matching Author Profile Card
+    st.markdown(f"""
+        <div style="background: {CONFIG['card_bg']}; border: 1px solid {CONFIG['card_border']}; border-radius: 12px; padding: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <div class="info-label" style="margin-bottom: 2px;">Project Architect</div>
+            <div style="font-size: 16px; font-weight: 700; color: #FFFFFF; margin-bottom: 8px;">Tanvir Anzum</div>
+            <div style="font-size: 11px; font-weight: 600; color: {CONFIG['success_color']}; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px;">
+                🧬 AI & Data Researcher
+            </div>
+            <div style='font-size: 13px; color: #9CA3AF; line-height: 1.4; border-top: 1px solid {CONFIG['card_border']}; padding-top: 10px;'>
+                Passionate about turning <strong>data into insights</strong> and building <strong>AI-powered tools</strong> for real-world impact.
+            </div>
+            <div style='font-size: 13px; margin-top: 14px; display: flex; gap: 16px; border-top: 1px solid {CONFIG['card_border']}; padding-top: 12px;'>
+                <a href="https://www.linkedin.com/in/aanzum" target="_blank" style="text-decoration: none; color: #FFFFFF; display: flex; align-items: center; gap: 6px;">
+                    <img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" alt="LinkedIn" width="14" style="vertical-align:middle;">
+                    <strong>LinkedIn</strong>
+                </a>
+                <a href="https://www.researchgate.net/profile/Tanvir-Anzum" target="_blank" style="text-decoration: none; color: #FFFFFF; display: flex; align-items: center; gap: 6px;">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/ResearchGate_icon_SVG.svg" alt="ResearchGate" width="14" style="vertical-align:middle; filter: invert(1);">
+                    <strong>Research</strong>
+                </a>
+            </div>
         </div>
     """, unsafe_allow_html=True)
     st.markdown("---")
