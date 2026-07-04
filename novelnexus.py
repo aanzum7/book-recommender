@@ -362,7 +362,7 @@ with st.sidebar:
         <div style="text-align: center; padding: 10px 0;">
             <h2 style='color:#FFFFFF; margin-bottom:0; font-weight:700; letter-spacing: -0.03em;'>📚 NovelNexus</h2>
             <div style='color:#4F46E5; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-top:2px;'>
-                Premium AI Bookstore
+                Discover books you'll love through AI-powered personalized recommendations. ⭐
             </div>
         </div>
     """, unsafe_allow_html=True)
