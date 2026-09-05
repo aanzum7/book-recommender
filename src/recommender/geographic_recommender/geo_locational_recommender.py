@@ -75,7 +75,7 @@ def save_top_isbn_to_json(top_isbn_dict: dict, output_dir: str) -> None:
         logger.error(f"Error saving top ISBNs to JSON: {e}")
         raise
 
-def parse_args():
+def parse_args(args=None):
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="Process and recommend books by geo-location.")
     parser.add_argument(
@@ -84,12 +84,13 @@ def parse_args():
     parser.add_argument(
         '--output_dir', type=str, default='data/recommender_result', help='Directory to save the results.'
     )
-    return parser.parse_args()
+    parsed, _ = parser.parse_known_args(args)
+    return parsed
 
-def main():
+def main(args=None):
     """Main function to process data and generate recommendations."""
     # Step 1: Parse arguments
-    args = parse_args()
+    args = parse_args(args)
 
     # Step 2: Read Parquet file
     filtered_data = read_parquet(args.input_file)

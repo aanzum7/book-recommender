@@ -88,19 +88,25 @@ def main():
         logger.error(f"Error categorizing age: {e}")
         raise
 
-    # Step 8: Filter for users with more than 5 ratings
+    # Step 8: Filter for users with more than 5 ratings (vectorized for speed)
     try:
         logger.info("Filtering users with more than 5 ratings...")
-        valid_users = ratings_data_with_age_books_infos.groupby('user_id').filter(lambda x: len(x) > 5)
+        user_counts = ratings_data_with_age_books_infos['user_id'].value_counts()
+        valid_users = ratings_data_with_age_books_infos[
+            ratings_data_with_age_books_infos['user_id'].isin(user_counts[user_counts > 5].index)
+        ]
         logger.info(f"Filtered {len(valid_users)} valid users.")
     except Exception as e:
         logger.error(f"Error filtering users: {e}")
         raise
 
-    # Step 9: Filter for books (ISBNs) with more than 10 ratings
+    # Step 9: Filter for books (ISBNs) with more than 10 ratings (vectorized for speed)
     try:
         logger.info("Filtering books with more than 10 ratings...")
-        valid_books = valid_users.groupby('isbn').filter(lambda x: len(x) > 10)
+        isbn_counts = valid_users['isbn'].value_counts()
+        valid_books = valid_users[
+            valid_users['isbn'].isin(isbn_counts[isbn_counts > 10].index)
+        ]
         logger.info(f"Filtered {len(valid_books)} valid books.")
     except Exception as e:
         logger.error(f"Error filtering books: {e}")

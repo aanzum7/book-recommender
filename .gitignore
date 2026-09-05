@@ -1,15 +1,68 @@
-# Ignore all files inside 'config' and its subdirectories, but keep the folder
-config/*
-!config/**/
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
 
-# Ignore all files inside 'data' and its subdirectories, but keep the folder
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Logs and databases
+logs/
+*.log
+*.sqlite3
+
+# IDE and Editor configs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Google Cloud Service Account Keys & Secrets
+config/service_account/*.json
+*.secret.toml
+
+# Data directory ignore rules
+# Ignore data contents, but preserve folder structure
 data/*
-!data/**/
-
-# Ignore other large files (optional, if you don't want to upload them)
-data/raw_files/Books.
-
-# Ignore Google Cloud Service Account Key
-config/service_account/json_key_google_drive.json
-
-.vscode/ 
+!data/raw_files/
+!data/preprocessed_files/
+!data/recommender_result/
+data/raw_files/*
+!data/raw_files/.gitkeep
+data/preprocessed_files/*
+!data/preprocessed_files/.gitkeep
+data/recommender_result/*
+!data/recommender_result/.gitkeep
