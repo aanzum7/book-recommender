@@ -1,86 +1,106 @@
-# Book Recommender System
+# NovelNexus - AI Book Recommendation System
 
-This project is focused on building a **Recommendation System for Books** that provides personalized book recommendations based on user preferences, ratings, and other factors. It leverages data processing, machine learning models, and collaborative filtering to suggest books to users.
+An end-to-end Machine Learning book recommendation engine and interactive marketplace built with Python, Scikit-learn, and Streamlit.
+
+Live Demo: [NovelNexus on Streamlit](https://recommend-novelnexus.streamlit.app/)
+
+---
+
+## Architecture Overview
+
+NovelNexus employs a **4-tier hybrid recommendation engine**:
+
+1. **Personalized Collaborative Filtering**:
+   - High-dimensional user-item interaction matrix decomposed via **TruncatedSVD** (100 components).
+   - User behavioral grouping using **MiniBatchKMeans** (30 clusters) to overcome cold-start sparsity.
+2. **Item-to-Item Similarity ("People Also Read")**:
+   - Cosine similarity across cluster co-occurrences to recommend similar titles when inspecting any book.
+3. **Demographic Recommender**:
+   - Age-bracket segmentation (*Teenager*, *Young Adult*, *Middle-aged*, *Senior*) weighted by rating score and review volume.
+4. **Geographic Recommender**:
+   - Regional trending books based on user location clusters.
+
+---
 
 ## Project Structure
 
-### Core Files
-- **`app.py`**: Main application to run the recommender system.
-- **`main.py`**: Script to initiate and run the book recommendation engine.
-- **`novelnexus.py`**: Module for novel-related data processing, including parsing and handling book-specific data.
-- **`playground.py`**: Experimental and testing scripts to explore different approaches for recommendations.
-
-### Configuration and Dependencies
-- **`conda_requirements.txt`**: Environment dependencies for Conda, ensuring the proper libraries are installed to run the system.
-- **`config/`**: Configuration files for setting up various parameters and API credentials, including Google Cloud service account credentials and other environment setups.
-
-### Data and Logs
-- **`data/`**: Datasets used in the system, such as books, ratings, and user data. This folder contains the data used for training the recommendation models.
-  - **`raw_files/`**: Raw files containing book information.
-  - **`processed_data/`**: Cleaned and preprocessed data for further analysis.
-- **`logs/`**: Logs related to the application, such as model training, errors, or other relevant output.
-- **`data_inject/`**: Scripts or modules used for injecting new data into the system.
-- **`data_preprocessing/`**: Scripts for preprocessing the data before feeding it to the recommendation models.
-
-### Source Code
-- **`src/`**: The source code for the recommendation system, including algorithms, models, data handling, and recommendation logic.
-
-## Project Flow
-
-1. **Raw Data Collection**:
-   - Source: Raw files are collected from Kaggle or similar platforms.
-   - Real Scenario: Data will be fetched from databases or other live sources.
-
-2. **Preprocessing**:
-   - Clean and preprocess the raw files to remove noise and ensure data quality.
-   - Based on specific parameters, the dataset is reduced to create a smaller, manageable version for MVP or demo purposes.
-
-3. **Recommendation Types**:
-   - **Demographic Recommendations**:
-     - Based on age group.
-     - Suggests books that are most reviewed by users in the same age group.
-   - **Geographic Recommendations**:
-     - Based on city group.
-     - Suggests books that are most reviewed by users in the same city group.
-   - **Collaborative Clustering**:
-     - Groups users into clusters based on similar reading patterns.
-     - Recommends books that are popular within the same cluster group.
-   - **Book-Centric Collaborative Recommendations (Future Plan)**:
-     - For each book, suggest other books collaboratively read by similar user groups.
-
-4. **Deployment**:
-   - The system is deployed on Streamlit for a user-friendly interface.
-   - Demo Link: [NovelNexus](https://recommend-novelnexus.streamlit.app/)
-
-## Installation
-
-1. Clone the repository:
-    ```bash
-    git clone https://github.com/aanzum7/book-recommender.git
-    cd book-recommender
-    ```
-
-2. Set up the environment:
-    - Using Conda:
-      ```bash
-      conda create --name book-recommender python=3.8
-      conda activate book-recommender
-      conda install --file conda_requirements.txt
-      ```
-
-3. Install any additional dependencies if required.
-
-## Running the Application
-
-To start the book recommender system, you can run the main script:
-
-```bash
-python app.py
+```text
+book-recommender/
+├── config/
+│   ├── pipeline_config.py       # Centralized hyperparameters, weights, and file paths
+│   └── logging_configs.py       # Application and pipeline logging configuration
+├── data/
+│   ├── raw_files/               # Books.csv, Ratings.csv, Users.csv
+│   ├── preprocessed_files/      # Parquet files (raw_data, distinct_books, users)
+│   └── recommender_result/      # Computed clusters, similarity matrices, recommendations
+├── src/
+│   ├── data_inject/             # Remote data ingestion (Google Drive with local fallback)
+│   ├── data_preprocessing/      # Vectorized cleaning, user & book catalog extraction
+│   └── recommender/
+│       ├── collaborative_filtering_recommender/  # SVD, KMeans, and Cosine similarity
+│       ├── demographic_recommender/              # Age-bracket weighted scoring
+│       ├── geographic_recommender/               # Regional trending recommender
+│       └── user_combined_recommendation/         # Multi-model aggregator
+├── main.py                      # Modular pipeline CLI orchestrator
+├── novelnexus.py                # Production Streamlit UI application
+├── Procfile                     # Cloud deployment instruction
+└── requirements.txt             # Python production dependencies
 ```
 
-This will start the system and provide personalized book recommendations based on the available data.
+---
 
-## Contributing
+## Quickstart & Installation
 
-Feel free to fork the repository and submit issues or pull requests for any changes or improvements you'd like to make.
+### 1. Clone & Set Up Environment
 
+```bash
+git clone https://github.com/aanzum7/book-recommender.git
+cd book-recommender
+
+# Using Conda
+conda create --name book-recommender python=3.11 -y
+conda activate book-recommender
+pip install -r requirements.txt
+```
+
+### 2. Running the Data & ML Pipeline
+
+The pipeline is fully modularized with step timing and targeted stage execution via [`main.py`](main.py):
+
+```bash
+# Run complete end-to-end pipeline (Ingestion -> Preprocessing -> Training -> Aggregation)
+python main.py
+
+# Or execute specific pipeline stages:
+python main.py --stage ingest       # Fetch raw data (Google Drive or local fallback)
+python main.py --stage preprocess   # Vectorized cleaning & Parquet extraction
+python main.py --stage recommend    # Compute Demographic, Geo, SVD, & Item Similarities
+python main.py --stage aggregate    # Aggregate multi-model outputs for all users
+```
+
+### 3. Launching the Web Application
+
+Launch the dark-themed discovery marketplace:
+
+```bash
+streamlit run novelnexus.py
+```
+
+---
+
+## Deployment
+
+The application is configured for deployment on Heroku, Render, and Streamlit Community Cloud using [`Procfile`](Procfile):
+
+```text
+web: streamlit run novelnexus.py --server.port=$PORT
+```
+
+---
+
+## Author
+
+**Tanvir Anzum**  
+AI & Data Researcher  
+- LinkedIn: [linkedin.com/in/aanzum](https://www.linkedin.com/in/aanzum)  
+- ResearchGate: [Tanvir-Anzum](https://www.researchgate.net/profile/Tanvir-Anzum)

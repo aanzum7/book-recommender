@@ -5,8 +5,7 @@ from sklearn.metrics.pairwise import cosine_similarity # type: ignore
 import logging
 
 # Logging setup
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from config.logging_configs import logger
 
 # Define paths
 RAW_PARQUET_PATH = "data/preprocessed_files/raw_data.parquet"
